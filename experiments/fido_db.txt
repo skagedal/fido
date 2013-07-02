@@ -1,0 +1,7 @@
+SELECT * FROM items, feeds USING feed_id
+  WHERE is_read = 0
+    AND (item_mute IS NULL OR item_mute < CURRENT_TIMESTAMP)
+    AND (feed_mute IS NULL OR feed_mute < CURRENT_TIMESTAMP)
+  ORDER BY priority DESC, item_updated 
+  LIMIT 0, 10
+
