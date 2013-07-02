@@ -7,6 +7,38 @@ interface  Fido.DBus.FeedStore : Object {
 
 class FidoClient : GLib.Object {
 
+	private Fido.DBus.FeedStore _server = null;
+
+	protected Fido.DBus.FeedStore server () {
+		if (this._server != null)
+			return this._server;
+
+		try {
+			this._server = Bus.get_proxy_sync (BusType.SESSION, 
+											   "org.gitorious.Fido.FeedStore",
+											   "/org/gitorious/Fido/FeedStore");
+
+		} catch (IOError e) {
+			stderr.printf ("%s\n", e.message);
+		}
+		return this._server;
+	}
+
+
+	protected void cmd_subscribe (string[] args) {
+		if (args.length == 1) {
+			try {
+				this.server().subscribe (args [0]);
+			} catch (IOError e) {
+				stderr.printf ("%s\n", e.message);
+			}
+		} else {
+			stderr.printf ("bad subscribe command\n");
+		}
+	}
+
+	// Static stuff
+
 	static bool version;
 
 	const OptionEntry[] main_options = {
@@ -16,7 +48,7 @@ class FidoClient : GLib.Object {
 	};
 
 	static int main (string[] args) {
-		Fido.DBus.FeedStore server = null;
+		var client = new FidoClient ();
 
 		var option_ctx = new OptionContext (""" - a news reader
 
@@ -40,18 +72,22 @@ Available commands:
 			stdout.printf ("fido doesn't even have a version yet\n");
 			return 0;
 		}
-		
-		try {
-			server = Bus.get_proxy_sync (BusType.SESSION, 
-										 "org.gitorious.Fido.FeedStore",
-										 "/org/gitorious/Fido/FeedStore");
 
-			server.subscribe ("foo");
-			stdout.printf ("Sent subscribe\n");
-		} catch (IOError e) {
-			stderr.printf ("%s\n", e.message);
+		args = args[1:args.length];
+
+		if (args.length > 0) {
+			switch (args[0]) {
+			case "subscribe":
+				client.cmd_subscribe (args[1:args.length]);
+				break;
+
+			default:
+				stderr.printf ("error: unknown command: %s\n",
+							   args[0]);
+				return 1;
+			}
 		}
-
+		
 		return 0;
 	}
 
