@@ -1,0 +1,17 @@
+Fido 1.0: The minimal feature set
+
+- Show one item at a time.
+- This is the oldest unread item among those with the highest priority.
+- Priority is calculated as feed priority plus item priority.
+- To the right, show item actions and feed actions.
+- Item actions:
+  * Mark as read.
+  * Lower item priority.
+- Feed actions:
+  * Unsubscribe.
+  * Raise priority.
+  * Lower priority.
+- A button at the top to add new subscriptions.
+
+That's it. 
+
