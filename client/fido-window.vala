@@ -28,21 +28,25 @@ public class ItemView : WebView {
     }
 }
 
-delegate void ItemActionCallback (Item i);
-delegate void FeedActionCallback (Feed f);
+public delegate void ItemActionCallback (Item i);
+public delegate void FeedActionCallback (Feed f);
 
-public class ItemAction : Button {
+public class ItemAction : Bin {
     private ItemActionCallback callback;
     
     public ItemAction (string text, ItemActionCallback cb) {
+		var button = new Button.with_label (text);
+		add (button);
 		this.callback = cb;
     }
 }
 
-public class FeedAction : Button {
+public class FeedAction : Bin {
     private FeedActionCallback callback;
     
     public FeedAction (string text, FeedActionCallback cb) {
+		var button = new Button.with_label (text);
+		add (button);
 		this.callback = cb;
     }
 }
@@ -52,20 +56,26 @@ public class FeedAction : Button {
  */
 public class ActionView : Box {
     public ActionView () {
+		this.orientation = Orientation.VERTICAL;
+
 		var item_label = new Label("Item actions");
 		var mark_action = new ItemAction("Mark", (item) => {
-				stdout.printf ("Marking item %s as read.\n", item.title);
+				stdout.printf ("Marking item %s as read.\n", 
+							   item.title);
 			});
 		var later_action = new ItemAction("Later", (item) => {
-				stdout.printf ("Lowering priority of item %s.\n", item.title);
+				stdout.printf ("Lowering priority of item %s.\n", 
+							   item.title);
 			});
 	
 		var feed_label = new Label("Feed actions");
 		var raise_feed_action = new FeedAction ("Raise priority", (feed) => {
-				stdout.printf ("Raising priority of feed %s.\n", feed.title);
+				stdout.printf ("Raising priority of feed %s.\n", 
+							   feed.title);
 			});
 		var lower_feed_action = new FeedAction ("Lower priority", (feed) => {
-				stdout.printf ("Lowering priority of feed %s.\n", feed.title);
+				stdout.printf ("Lowering priority of feed %s.\n", 
+							   feed.title);
 			}); 
 		var unsubscribe_feed_action = new FeedAction ("Unsubscribe", (feed) => {
 				stdout.printf ("Unsubscribing feed %s.\n", feed.title);
@@ -90,7 +100,7 @@ public class AppWindow : Window {
     private ActionView action_view;
     
     public AppWindow () {
-	this.title = "Fido News Reader";
+		this.title = "Fido News Reader";
         this.window_position = WindowPosition.CENTER;
         set_default_size (400, 300);
 
@@ -102,12 +112,12 @@ public class AppWindow : Window {
         toolbar.add (open_button);
         open_button.clicked.connect (on_subscribe_clicked);
 
-	this.item_view = new ItemView ();
-	this.action_view = new ActionView ();
-
-	var hpaned = new Paned (Orientation.HORIZONTAL, 0);
-	hpaned.pack1 (item_view, true, true);
-	hpaned.pack2 (action_view, false, true);
+		this.item_view = new ItemView ();
+		this.action_view = new ActionView ();
+		
+		var hpaned = new Paned (Orientation.HORIZONTAL);
+		hpaned.pack1 (item_view, true, true);
+		hpaned.pack2 (action_view, false, true);
 	
         var vbox = new Box (Orientation.VERTICAL, 0);
         vbox.pack_start (toolbar, false, true, 0);
