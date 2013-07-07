@@ -1,6 +1,6 @@
 all: fido fido-window
 
-fido: fido.vala
+fido: fido.vala ../server/fido-dbus-interface.vala
 	valac --pkg gio-2.0 $^ -o $@
 
 fido-window: fido-window.vala

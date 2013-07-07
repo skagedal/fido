@@ -1,10 +1,5 @@
 using GLib;
 
-[DBus (name = "org.gitorious.Fido.FeedStore")]
-interface  Fido.DBus.FeedStore : Object {
-	public abstract void subscribe (string url) throws IOError;
-}
-
 class FidoClient : GLib.Object {
 
 	private Fido.DBus.FeedStore _server = null;
@@ -25,16 +20,21 @@ class FidoClient : GLib.Object {
 	}
 
 
-	protected void cmd_subscribe (string[] args) {
+	protected void cmd_subscribe (string[] args) throws IOError {
 		if (args.length == 1) {
-			try {
-				this.server().subscribe (args [0]);
-			} catch (IOError e) {
-				stderr.printf ("%s\n", e.message);
-			}
+			this.server().subscribe (args [0]);
 		} else {
 			stderr.printf ("bad subscribe command\n");
 		}
+	}
+
+	protected void cmd_feeds () {
+		stdout.printf ("Showing list of feeds..\n");
+	}
+
+	protected void cmd_show () throws IOError {
+		Fido.DBus.Item item = this.server().get_current_item ();
+		stdout.printf ("Title: %s\n", item.title);
 	}
 
 	// Static stuff
@@ -55,7 +55,8 @@ class FidoClient : GLib.Object {
 Available commands:
 
   subscribe <URL>         Subscribe to a feed
-  feeds                   List feeds""");
+  feeds                   List feeds
+  show                    Show current item""");
 
 
 		option_ctx.add_main_entries (main_options, null);
@@ -75,19 +76,31 @@ Available commands:
 
 		args = args[1:args.length];
 
-		if (args.length > 0) {
-			switch (args[0]) {
-			case "subscribe":
-				client.cmd_subscribe (args[1:args.length]);
-				break;
+		try {
+			if (args.length > 0) {
+				switch (args[0]) {
+				case "subscribe":
+					client.cmd_subscribe (args[1:args.length]);
+					break;
 
-			default:
-				stderr.printf ("error: unknown command: %s\n",
-							   args[0]);
-				return 1;
+				case "feeds":
+					client.cmd_feeds ();
+					break;
+
+				case "show":
+					client.cmd_show ();
+					break;
+				
+				default:
+					stderr.printf ("error: unknown command: %s\n",
+								   args[0]);
+					return 1;
+				}
 			}
+		} catch (IOError e) {
+			stderr.printf ("%s\n", e.message);
+			return 1;
 		}
-		
 		return 0;
 	}
 
