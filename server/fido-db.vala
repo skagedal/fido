@@ -1,27 +1,24 @@
 using SQLHeavy;
 
 namespace Fido {
-    
-enum {
-    STEVES_FOOD,
-    FRIEND_TOM,
-    WORK_STUFF,
-    TIME_WASTE
-};
 
+enum Blog {
+	STEVES_FOOD,
+	FRIEND_TOM,
+	WORK_STUFF,
+	TIME_WASTE
+}
+    
 public class Database {
-    private db;
-    public Database {
-	this.db = new SQLHeavy.Database (":memory:",
-					 FileMode.READ |
-					 FileMode.WRITE |
-					 FileMode.CREATE);
-	
+
+    private SQLHeavy.Database db;
+    public Database () throws SQLHeavy.Error {
+		this.db = new SQLHeavy.Database ("foo.db");
     }
 
-    public create_tables () {
-	this.db.execute ("""
-            CREATE TABLE items (
+    public void create_tables () throws SQLHeavy.Error {
+		this.db.execute ("""
+            CREATE TABLE IF NOT EXISTS items (
                 item_title               TEXT,
                 item_content             TEXT,
                 item_posted              INTEGER,
@@ -31,7 +28,7 @@ public class Database {
                 feed_id                  INTEGER NOT NULL
             )""");
         this.db.execute ("""
-            CREATE TABLE feeds (
+            CREATE TABLE IF NOT EXISTS feeds (
                 feed_id                  INTEGER PRIMARY KEY,
                 feed_title               TEXT,
                 feed_metadata            TEXT,
@@ -40,31 +37,63 @@ public class Database {
             )""");
     }
 
-    public create_feeds () {
-	var trans = this.db.begin_transaction ();
-	// can you do this?
-	void insert (string title, int64 feed, int64 prio) {
-	    trans.execute ("""
+	// This is just for testing
+	struct FeedEntry {
+		string title;
+		int64 id;
+		int64 prio;
+	}
+	const FeedEntry[] entries = {
+		{ "Steve's Food",   Blog.STEVES_FOOD,    0},
+		{ "Friend Tom",     Blog.FRIEND_TOM,     2},
+		{ "Work Stuff",     Blog.WORK_STUFF,     1},
+		{ "Time Waste",     Blog.TIME_WASTE,     0}};
+
+    public void create_feeds () throws SQLHeavy.Error {
+		var trans = this.db.begin_transaction ();
+
+		foreach (FeedEntry entry in entries) {
+			trans.execute ("""
                 INSERT INTO `feeds` (
                     feed_title, 
                     feed_id,
                     feed_priority)
                 VALUES (:title, :id, :prio)""",
-			   ":title", typeof(string), title,
-			   ":feed", typeof(int64), feed,
-			   ":prio", typeof(int64), prio);
-	};
-	insert ("Steve's Food",   STEVES_FOOD,    0);
-        insert ('Friend Tom',     FRIEND_TOM,     2);
-        insert ('Work Stuff',     WORK_STUFF,     1);
-        insert ('Time Waste',     TIME_WASTE,     0);
-	trans.commit ();
+			   ":title", typeof(string), entry.title,
+			   ":id", typeof(int64), entry.id,
+			   ":prio", typeof(int64), entry.prio);
+		};
+		trans.commit ();
     }
 
-    public create_items () {
+	struct ItemEntry {
+		string title;
+		int64 feed_id;
+		bool is_read;
+		int64 updated;
+	}
+    public void create_items () {
+/*
+		ItemEntry[] entries = {
+			ItemEntry() {
+				title = 
+*/  
+  }
+
+    public void show_first_item () {
+
     }
 
-    public show_first_item () {
+	public static void main (string[] args) {
+		try {
+			var db = new Fido.Database();
+			db.create_tables ();
+			db.create_feeds ();
+			db.create_items ();
+		} catch (SQLHeavy.Error e) {
+			stdout.printf ("Error: %s\n", e.message);
+		}
+	}
+}
 
-    }
 }
