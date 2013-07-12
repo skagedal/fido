@@ -1,3 +1,6 @@
+VALAC=valac-0.20
+VALAFLAGS=--target-glib=2.36 --save-temps $(VALAFLAGS)
+
 all: fido fido-window
 
 fido: fido.vala ../server/fido-dbus-interface.vala

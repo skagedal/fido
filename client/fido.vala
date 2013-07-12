@@ -29,7 +29,10 @@ class FidoClient : GLib.Object {
 	}
 
 	protected void cmd_feeds () {
-		stdout.printf ("Showing list of feeds..\n");
+		Fido.DBus.Feed[] feeds = this.server().get_feeds ();
+		foreach (Fido.DBus.Feed feed in feeds) {
+			stdout.printf ("%s [%s]\n", feed.title, feed.url);
+		}
 	}
 
 	protected void cmd_show () throws IOError {

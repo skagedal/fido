@@ -3,19 +3,35 @@ using Grss;
 
 namespace Fido {
 
-enum Blog {
-	STEVES_FOOD,
-	FRIEND_TOM,
-	WORK_STUFF,
-	TIME_WASTE
-}
-    
 public class Database {
 
     private SQLHeavy.Database db;
-    public Database () throws SQLHeavy.Error {
-		this.db = new SQLHeavy.Database ("foo.db");
+
+	/**
+	 * Constructor.
+	 *
+	 * @filename: if null, use in-memory database
+	 */
+    public Database (string? filename = null) throws SQLHeavy.Error {
+		this.db = new SQLHeavy.Database (filename);
+		create_tables ();
+		create_examples ();
     }
+
+	public void create_examples () throws SQLHeavy.Error {
+		var steve_channel = new Grss.FeedChannel.with_source ("http://foo.org/steves_food/");
+		steve_channel.set_title ("Steve's Food");
+		var steve_id = add_feed (steve_channel);
+		stdout.printf (@"Steve's id: $steve_id\n");
+		
+		var sandwich = new Grss.FeedItem (steve_channel);
+		sandwich.set_title ("Sandwich!");
+		var datetime = new DateTime.utc (2012, 11, 01, 13, 37, 00);
+		sandwich.set_publish_time ((long) datetime.to_unix ());
+		var sandwich_id = add_item (sandwich);
+		stdout.printf (@"Sandwich id: $sandwich_id\n");
+	}
+
 
     public void create_tables () throws SQLHeavy.Error {
 		this.db.execute ("""
@@ -74,76 +90,29 @@ public class Database {
 		return id;
  	}
 
-	public void create_examples () throws SQLHeavy.Error {
-		var steve_channel = new Grss.FeedChannel.with_source ("http://foo.org/steves_food/");
-		steve_channel.set_title ("Steve's Food");
-		var steve_id = this.add_feed (steve_channel);
-		stdout.printf (@"Steve's id: $steve_id\n");
+	public Fido.DBus.Feed[] get_feeds () {
+		var feedlist = new Fido.DBus.Feed[0]; 
+		try {
+			var results = this.db.execute ("""
+                SELECT `feed_title`, `feed_source`
+                FROM `feeds`""");
 
-		var sandwich = new Grss.FeedItem (steve_channel);
-		sandwich.set_title ("Sandwich!");
-		var datetime = new DateTime.utc (2012, 11, 01, 13, 37, 00);
-		sandwich.set_publish_time ((long) datetime.to_unix ());
-		var sandwich_id = this.add_item (sandwich);
-		stdout.printf (@"Sandwich id: $sandwich_id\n");
+			for (int record = 0; !results.finished; record++, results.next ()) {
+				var feed = Fido.DBus.Feed ();
+				feed.title = results.fetch_string (0) ?? "";
+				feed.url = results.fetch_string (1) ?? "";
+				feedlist += feed;
+			}
+		} catch (SQLHeavy.Error e) {
+			stderr.printf ("get_feeds() got SQL error: %s\n", e.message);
+		}
+		return feedlist;
 	}
-
-/*
-	// This is just for testing
-	struct FeedEntry {
-		string title;
-		int64 id;
-		int64 prio;
-	}
-	const FeedEntry[] entries = {
-		{ "Steve's Food",   Blog.STEVES_FOOD,    0},
-		{ "Friend Tom",     Blog.FRIEND_TOM,     2},
-		{ "Work Stuff",     Blog.WORK_STUFF,     1},
-		{ "Time Waste",     Blog.TIME_WASTE,     0}};
-
-    public void create_feeds () throws SQLHeavy.Error {
-		var trans = this.db.begin_transaction ();
-
-		foreach (FeedEntry entry in entries) {
-			trans.execute ("""
-                INSERT INTO `feeds` (
-                    feed_title, 
-                    feed_id,
-                    feed_priority)
-                VALUES (:title, :id, :prio)""",
-			   ":title", typeof(string), entry.title,
-			   ":id", typeof(int64), entry.id,
-			   ":prio", typeof(int64), entry.prio);
-		};
-		trans.commit ();
-    }
-
-	struct ItemEntry {
-		string title;
-		int64 feed_id;
-		bool is_read;
-		int64 updated;
-	}
-    public void create_items () {
-		ItemEntry[] entries = {
-			ItemEntry() {
-				title = 
-  }
-*/
 
     public void show_first_item () {
 
     }
 
-	public static void main (string[] args) {
-		try {
-			var db = new Fido.Database();
-			db.create_tables ();
-			db.create_examples ();
-		} catch (SQLHeavy.Error e) {
-			stdout.printf ("Error: %s\n", e.message);
-		}
-	}
 }
 
 }

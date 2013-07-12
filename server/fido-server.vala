@@ -4,8 +4,27 @@
 public class Fido.DBus.FeedStoreImpl : Object, Fido.DBus.FeedStore {
     public static const string INTERFACE_NAME = "org.gitorious.Fido.FeedStore";
 
+	private Fido.Server server;
+
+	/**
+	 * Constructor.
+	 */
+	public FeedStoreImpl (Fido.Server server) {
+		this.server = server;
+	}
+
 	public void subscribe (string url) {
 		stdout.printf ("Subscribing to %s\n", url);
+		try {
+			var channel = new Grss.FeedChannel.with_source (url);
+			this.server.database.add_feed (channel);
+		} catch (SQLHeavy.Error e) {
+			error ("subscribe: database error");
+		}
+	}
+
+	public Fido.DBus.Feed[] get_feeds () {
+		return this.server.database.get_feeds ();
 	}
 
 	public Fido.DBus.Item get_current_item () {
@@ -20,28 +39,47 @@ public class Fido.DBus.FeedStoreImpl : Object, Fido.DBus.FeedStore {
 		cb({"foo", "bar"});
 	}
 */
-	
 
 }
 
-void on_bus_aquired (DBusConnection conn) {
-    try {
-        // start service and register it as dbus object
-        var service = new Fido.DBus.FeedStoreImpl();
-        conn.register_object ("/org/gitorious/Fido/FeedStore", service);
-    } catch (IOError e) {
-        stderr.printf ("Could not register service: %s\n", e.message);
-    }
-}
+public class Fido.Server : Object {
 
-void main () {
-    // See https://developer.gnome.org/gio/stable/gio-Owning-Bus-Names.html
-    Bus.own_name (BusType.SESSION, 
-		  Fido.DBus.FeedStoreImpl.INTERFACE_NAME,
-		  BusNameOwnerFlags.NONE,
-                  on_bus_aquired,
-                  () => {},
-                  () => stderr.printf ("Could not aquire name\n"));
+	private Fido.DBus.FeedStoreImpl service;
+	private Fido.Database _database;
 
-    new MainLoop ().run ();
+	public Server () {
+		try {
+			// For now, use in-memory database
+			this._database = new Database ();
+		} catch (SQLHeavy.Error e) {
+			error ("Server(): couldn't create database");
+		}
+	}
+
+	public Fido.Database database { get { return this._database; } }
+
+	public void on_bus_aquired (DBusConnection conn) {
+		try {
+			// start service and register it as dbus object
+			this.service = new Fido.DBus.FeedStoreImpl(this);
+			conn.register_object ("/org/gitorious/Fido/FeedStore", this.service);
+		} catch (IOError e) {
+			stderr.printf ("Could not register service: %s\n", e.message);
+		}
+	}
+
+	public static void main (string args []) {
+		
+		var server = new Fido.Server();
+
+		// See https://developer.gnome.org/gio/stable/gio-Owning-Bus-Names.html
+		Bus.own_name (BusType.SESSION, 
+					  Fido.DBus.FeedStoreImpl.INTERFACE_NAME,
+					  BusNameOwnerFlags.NONE,
+					  server.on_bus_aquired,
+					  () => {},
+					  () => stderr.printf ("Could not aquire name\n"));
+		
+		new MainLoop ().run ();
+	}
 }
