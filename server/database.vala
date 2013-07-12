@@ -19,12 +19,11 @@ public class Database {
     }
 
 	public void create_examples () throws SQLHeavy.Error {
-		var steve_channel = new Grss.FeedChannel.with_source ("http://foo.org/steves_food/");
-		steve_channel.set_title ("Steve's Food");
-		var steve_id = add_feed (steve_channel);
-		stdout.printf (@"Steve's id: $steve_id\n");
+		var my_channel = new Grss.FeedChannel.with_source ("http://localhost/simon/example.xml");
+		var my_id = add_feed (my_channel);
+		stdout.printf (@"Channel id: $my_id\n");
 		
-		var sandwich = new Grss.FeedItem (steve_channel);
+		var sandwich = new Grss.FeedItem (my_channel);
 		sandwich.set_title ("Sandwich!");
 		var datetime = new DateTime.utc (2012, 11, 01, 13, 37, 00);
 		sandwich.set_publish_time ((long) datetime.to_unix ());
@@ -53,7 +52,8 @@ public class Database {
                 feed_source              TEXT,
                 feed_metadata            TEXT,
                 feed_priority            INTEGER DEFAULT 0,
-                feed_mute                INTEGER
+                feed_mute                INTEGER,
+                feed_updated             INTEGER DEFAULT 0
             )""");
     }
 
@@ -107,6 +107,28 @@ public class Database {
 			stderr.printf ("get_feeds() got SQL error: %s\n", e.message);
 		}
 		return feedlist;
+	}
+
+	public Gee.List<Fido.Feed> get_feeds_not_updated_since (DateTime d) {
+		int64 t = d.to_unix ();
+		Gee.List<Fido.Feed> feeds = new Gee.LinkedList<Fido.Feed> ();
+		
+		try {
+			var query = this.db.prepare("""
+                SELECT `feed_id`, `feed_title`, `feed_source`
+                FROM `feeds`
+                WHERE `feed_updated` < :time""");
+			query[":time"] = t;
+			for (var r = query.execute (); !r.finished; r.next ()) {
+				var feed = new Fido.Feed.with_id (r.fetch_int (0));
+				feed.title = r.fetch_string (1) ?? "";
+				feed.source = r.fetch_string (2) ?? "";
+				feeds.add (feed);
+			}
+		} catch (SQLHeavy.Error e) {
+			stderr.printf ("get_feeds_not_updated_since() got SQL error: %s\n", e.message);
+		}
+		return feeds;
 	}
 
     public void show_first_item () {

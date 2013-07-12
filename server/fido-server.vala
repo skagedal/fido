@@ -46,14 +46,30 @@ public class Fido.Server : Object {
 
 	private Fido.DBus.FeedStoreImpl service;
 	private Fido.Database _database;
+	private MainLoop mainloop;
+	private Updater updater;
 
 	public Server () {
+		this.mainloop = new MainLoop ();
+
+
 		try {
 			// For now, use in-memory database
 			this._database = new Database ();
+
+			this.updater = new Updater (this._database);
+
+			var timeout = new TimeoutSource.seconds (1);
+			timeout.set_callback(() => { 
+					updater.run (); 
+					return true;
+				});
+			timeout.attach (this.mainloop.get_context ());
+
 		} catch (SQLHeavy.Error e) {
 			error ("Server(): couldn't create database");
 		}
+
 	}
 
 	public Fido.Database database { get { return this._database; } }
@@ -68,7 +84,12 @@ public class Fido.Server : Object {
 		}
 	}
 
-	public static void main (string args []) {
+	public int run () {
+		this.mainloop.run ();
+		return 0;
+	}
+
+	public static int main (string args []) {
 		
 		var server = new Fido.Server();
 
@@ -80,6 +101,6 @@ public class Fido.Server : Object {
 					  () => {},
 					  () => stderr.printf ("Could not aquire name\n"));
 		
-		new MainLoop ().run ();
+		return server.run ();
 	}
 }
