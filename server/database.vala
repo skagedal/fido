@@ -133,6 +133,14 @@ public class Database {
 
     public void show_first_item () {
 
+		// SELECT to get unread items should have:
+		// WHERE read_time < updated_time AND updated_time < now
+		// (possibly using BETWEEN)
+		// 
+		// This correctly handles items that get updated after being read
+		// while not choking on the corner case of items with update time
+		// in the future.
+
     }
 
 }
