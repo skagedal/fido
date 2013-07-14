@@ -1,6 +1,7 @@
 VALAC=valac-0.20
 # use --Xcc=-w to disable C warnings
-VALAFLAGS=--target-glib=2.36 --save-temps --Xcc=-w
+VALAFLAGS=--Xcc=-w
+VALAFLAGS := --target-glib=2.36 --save-temps $(VALAFLAGS)
 LIBNAMES =			\
 	gobject-2.0		\
 	gio-2.0			\

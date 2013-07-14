@@ -61,7 +61,7 @@ public class Fido.Server : Object {
 
 			var timeout = new TimeoutSource.seconds (1);
 			timeout.set_callback(() => { 
-					updater.run (); 
+					updater.check_for_updates (); 
 					return true;
 				});
 			timeout.attach (this.mainloop.get_context ());
