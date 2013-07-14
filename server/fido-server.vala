@@ -91,6 +91,8 @@ public class Fido.Server : Object {
 
 	public static int main (string args []) {
 		
+		Fido.Logging.set_flags (Fido.Logging.Flag.UPDATER);
+		
 		var server = new Fido.Server();
 
 		// See https://developer.gnome.org/gio/stable/gio-Owning-Bus-Names.html

@@ -89,6 +89,10 @@ public class Database {
 		item.set_data<int64> ("sqlid", id);
 		return id;
  	}
+ 	
+ 	public void update_feed (Grss.FeedChannel channel, GLib.List<Grss.FeedItem> items) throws SQLHeavy.Error {
+        add_feed (channel);
+ 	}
 
 	public Fido.DBus.Feed[] get_feeds () {
 		var feedlist = new Fido.DBus.Feed[0]; 

@@ -1,3 +1,5 @@
+using Fido.Logging;
+
 namespace Fido {
 
 public class Updater : Object {
@@ -12,36 +14,57 @@ public class Updater : Object {
 	private Soup.SessionAsync session;
 
 	private Gee.Queue<Fido.Feed> jobs_to_run;
-	private Gee.Set<Fido.Feed> running_jobs;
+	private Gee.Map<string, Fido.Feed> running_jobs;
 
 	public Updater (Database database) {
 		this.database = database;
 		this.jobs_to_run = new Gee.LinkedList<Fido.Feed> ();
-		this.running_jobs = new Gee.HashSet<Fido.Feed> ();
+		this.running_jobs = new Gee.HashMap<string, Fido.Feed> ();
 		this.session = new Soup.SessionAsync ();
+		session.set_data<Updater> ("fido-updater", this);
 	}
 
-	// Would want to pass the Fido.Feed, but there's a bug
+	// We have to do this instead of passing the feed in a closure because of
+	// a bug: https://bugzilla.gnome.org/show_bug.cgi?id=704176
+	// Since passing things in closure doesn't work, I prefer to not use 
+	// anonymous delegate function to make clear what the scope is.
 
-	public void handle_update (string feedurl, string body) {
-		stdout.printf ("Parsing string beginning with %s\n", body[0:20]);
+	public static void handle_update (Soup.SessionAsync session,
+					  Soup.Message m) {
+		Updater updater = session.get_data<Updater> ("fido-updater");
+        string uri = m.uri.to_string (false);
+		Logging.message (Flag.UPDATER, 
+		                 @"GET $(uri): $(m.status_code) $(m.reason_phrase)");
+        if (m.status_code == 200) {
+            // FIXME: Not safe, we need to check content-type and encoding
+            string body = (string) m.response_body.data;
+    		Logging.message (Flag.UPDATER, "Parsing string beginning with %s", body[0:20]);
+            Logging.message (Flag.UPDATER, @"($(m.response_body.length) bytes)");
+            if (updater.running_jobs.has_key (uri)) {
+                stdout.printf ("it's there\n");
+                var feed = updater.running_jobs[uri];
+                stdout.printf ("Feed source: %s\n", feed.source);
+                updater.update_feed (feed, body);
+            } else {
+                Logging.warning (Flag.UPDATER, "Got response on an URL not in running jobs");
+            }
+        } else {
+            Logging.warning (Flag.UPDATER, "Got response $(m.status_code) $(m.reason_phrase) on $(uri)");
+        }
+
 	}
+
+    public void update_feed (Feed feed, string body) {
+        feed.parse (body);
+    }
 
 	public void work_on_queue () {
 		while (jobs_to_run.size > 0 && running_jobs.size < MAX_JOBS) {
 			var feed = jobs_to_run.poll ();
 			stdout.printf ("Starting download of %s\n", feed.source);
 			var msg = new Soup.Message ("GET", feed.source);
-			session.queue_message (msg, (s, m) => {
-					stdout.printf (@"Got response: $(m.status_code) - ");
-					if (m.status_code == 200) {
-						this.handle_update (m.get_uri ().to_string (false),
-											(string) m.response_body.data);
-					}
-					// MessageBody response = m.response_body;
-					// stdout.write (m.response_body.data);
-					stdout.printf (@"$(m.response_body.length) bytes\n");
-				});
+			session.queue_message (msg, (Soup.SessionCallback) handle_update);
+			running_jobs[feed.source] = feed;
 		}
 	}
 	
