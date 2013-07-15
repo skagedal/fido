@@ -12,7 +12,10 @@ namespace Fido.Logging {
 [Flags]
 public enum Flag {
     NONE,
-    UPDATER;
+    SERVER,
+    UPDATER,
+    DATABASE,
+    ALL = ~NONE;
     
     public inline bool is_all_set(Flag flags) {
         return (flags & this) == flags;
@@ -23,7 +26,8 @@ public enum Flag {
     }   
 }
 
-private Flag logging_flags = Flag.NONE;
+//private Flag logging_flags = Flag.NONE;
+private Flag logging_flags = Flag.ALL;
 
 /**
  * Replaces the current logging flags with flags.  Use Fido.Logging.Flag.NONE 

@@ -55,7 +55,15 @@ public class Updater : Object {
 	}
 
     public void update_feed (Feed feed, string body) {
-        feed.parse (body);
+        try {
+            feed.parse(body);
+            feed.updated_time = new DateTime.now_utc().to_unix();
+            database.update_feed(feed);
+        } catch (SQLHeavy.Error e) {
+            Logging.error (Flag.UPDATER, 
+                           "Updating feed %s caused database error: %s",
+                           feed.source, e.message);
+        }
     }
 
 	public void work_on_queue () {

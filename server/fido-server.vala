@@ -1,3 +1,5 @@
+using Fido.Logging;
+
 // Should we have timeout = 120000 as Geary does?
  
 [DBus (name = "org.gitorious.Fido.FeedStore")]
@@ -19,7 +21,7 @@ public class Fido.DBus.FeedStoreImpl : Object, Fido.DBus.FeedStore {
 			var channel = new Grss.FeedChannel.with_source (url);
 			this.server.database.add_feed (channel);
 		} catch (SQLHeavy.Error e) {
-			error ("subscribe: database error");
+			Logging.error (Flag.SERVER, "subscribe: database error");
 		}
 	}
 
@@ -50,30 +52,44 @@ public class Fido.Server : Object {
 	private Updater updater;
 
 	public Server () {
+	    Logging.debug (Flag.SERVER, "Creating mainloop");
 		this.mainloop = new MainLoop ();
-
-
-		try {
-			// For now, use in-memory database
-			this._database = new Database ();
-
-			this.updater = new Updater (this._database);
-
-			var timeout = new TimeoutSource.seconds (1);
-			timeout.set_callback(() => { 
-					updater.check_for_updates (); 
-					return true;
-				});
-			timeout.attach (this.mainloop.get_context ());
-
-		} catch (SQLHeavy.Error e) {
-			error ("Server(): couldn't create database");
-		}
-
 	}
+
+    /** 
+     * Initializes database, and things that depends on the database
+     * being initialized.
+     */
+    public void init_db (bool memory = false, string? filename = null) throws SQLHeavy.Error, DatabaseError {
+	    string db_filename;
+	    if (memory)
+	        db_filename = null;
+	    else
+	        db_filename = filename ?? get_default_database_filename();
+	    Logging.message (Flag.SERVER, "Initializing database: %s", db_filename);
+
+		this._database = new Database (db_filename);
+
+		this.updater = new Updater (this._database);
+
+		var timeout = new TimeoutSource.seconds (1);
+		timeout.set_callback(() => { 
+				updater.check_for_updates (); 
+				return true;
+			});
+		timeout.attach (this.mainloop.get_context ());
+    }
 
 	public Fido.Database database { get { return this._database; } }
 
+    public string get_user_data_directory() {
+        return Path.build_filename(Environment.get_user_data_dir(), "fido");
+    }
+    
+    public string get_default_database_filename() {
+        return Path.build_filename(get_user_data_directory(), "fido.db");
+    }
+    
 	public void on_bus_aquired (DBusConnection conn) {
 		try {
 			// start service and register it as dbus object
@@ -89,12 +105,44 @@ public class Fido.Server : Object {
 		return 0;
 	}
 
-	public static int main (string args []) {
-		
-		Fido.Logging.set_flags (Fido.Logging.Flag.UPDATER);
-		
-		var server = new Fido.Server();
+    static bool version;
+    static bool memory_db;
 
+	const OptionEntry[] main_options = {
+		{ "version", 0, 0, OptionArg.NONE, ref version, 
+		  "Display version number", null },
+		{ "memory-db", 0, 0, OptionArg.NONE, ref memory_db,
+		  "Use temporary database", null },
+		{ null }
+	};
+
+	public static int main (string args []) {
+		var option_ctx = new OptionContext (""" - server for the Fido news reader""");
+		option_ctx.add_main_entries (main_options, null);
+
+		try {
+			option_ctx.parse (ref args);
+		} catch (OptionError e) {
+			stderr.printf ("%s\n", e.message);
+			return 1;
+		}
+
+		if (version) {
+			stdout.printf ("fido-server doesn't even have a version yet\n");
+			return 0;
+		}
+
+	    var server = new Fido.Server();
+		try {
+            server.init_db(memory_db);
+		} catch (DatabaseError e) {
+            Logging.critical (Flag.SERVER, e.message);
+            return 1;
+		} catch (SQLHeavy.Error e) {
+			Logging.critical (Flag.SERVER, "Database error: %s", e.message);
+			return 1;
+		}
+		
 		// See https://developer.gnome.org/gio/stable/gio-Owning-Bus-Names.html
 		Bus.own_name (BusType.SESSION, 
 					  Fido.DBus.FeedStoreImpl.INTERFACE_NAME,

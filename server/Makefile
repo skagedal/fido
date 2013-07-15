@@ -15,6 +15,7 @@ LIBS=$(LIBNAMES:%=--pkg %) --vapidir=../vapi
 fido_server_SOURCES =           \
 	fido-server.vala            \
 	feed.vala                   \
+	item.vala                   \
 	dbus-interface.vala         \
 	database.vala               \
 	updater.vala                \

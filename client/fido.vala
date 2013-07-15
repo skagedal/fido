@@ -1,6 +1,6 @@
-using GLib;
+namespace Fido {
 
-class FidoClient : GLib.Object {
+class Client : GLib.Object {
 
 	private Fido.DBus.FeedStore _server = null;
 

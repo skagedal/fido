@@ -1,7 +1,13 @@
 using SQLHeavy;
 using Grss;
+using Fido.Logging;
 
 namespace Fido {
+
+public errordomain DatabaseError {
+    FILE_NOT_FOUND,
+    CREATE_TABLE
+}
 
 public class Database {
 
@@ -12,10 +18,17 @@ public class Database {
 	 *
 	 * @filename: if null, use in-memory database
 	 */
-    public Database (string? filename = null) throws SQLHeavy.Error {
-		this.db = new SQLHeavy.Database (filename);
+    public Database (string? filename = null) throws DatabaseError, SQLHeavy.Error {
+        Logging.message (Flag.DATABASE, @"Connecting to SQLite database: $filename");
+        try {
+    		this.db = new SQLHeavy.Database (filename);
+    	} catch (SQLHeavy.Error e) {
+            // This is the "SQL error or missing database" error, which in this
+            // case has to be the latter.
+            throw new DatabaseError.FILE_NOT_FOUND(@"File not found: $filename");
+    	}
 		create_tables ();
-		create_examples ();
+//		create_examples ();
     }
 
 	public void create_examples () throws SQLHeavy.Error {
@@ -32,42 +45,40 @@ public class Database {
 	}
 
 
-    public void create_tables () throws SQLHeavy.Error {
-		this.db.execute ("""
-            CREATE TABLE IF NOT EXISTS `items` (
-                item_id                  INTEGER PRIMARY KEY,
-                item_guid                TEXT,
-                item_title               TEXT,
-                item_content             TEXT,
-                item_posted              INTEGER,
-                item_updated             INTEGER,
-                item_is_read             INTEGER DEFAULT 0,
-                item_mute                INTEGER,
-                feed_id                  INTEGER NOT NULL
-            )""");
-        this.db.execute ("""
-            CREATE TABLE IF NOT EXISTS `feeds` (
-                feed_id                  INTEGER PRIMARY KEY,
-                feed_title               TEXT,
-                feed_source              TEXT,
-                feed_metadata            TEXT,
-                feed_priority            INTEGER DEFAULT 0,
-                feed_mute                INTEGER,
-                feed_updated             INTEGER DEFAULT 0
-            )""");
+    public void create_tables () throws DatabaseError {
+        try {
+		    this.db.execute ("""
+                CREATE TABLE IF NOT EXISTS `items` (
+                    item_id                  INTEGER PRIMARY KEY,
+                    item_guid                TEXT NOT NULL,
+                    item_title               TEXT,
+                    item_content             TEXT,
+                    item_posted              INTEGER,
+                    item_updated             INTEGER,
+                    item_is_read             INTEGER DEFAULT 0,
+                    item_mute                INTEGER,
+                    feed_id                  INTEGER NOT NULL,
+                    UNIQUE (feed_id, item_guid)
+                )
+                """);
+        } catch (SQLHeavy.Error e) {
+            throw new DatabaseError.CREATE_TABLE("Error creating table 'items'");
+        }
+        try {
+            this.db.execute ("""
+                CREATE TABLE IF NOT EXISTS `feeds` (
+                    feed_id                  INTEGER PRIMARY KEY,
+                    feed_title               TEXT,
+                    feed_source              TEXT UNIQUE NOT NULL,
+                    feed_metadata            TEXT,
+                    feed_priority            INTEGER DEFAULT 0,
+                    feed_mute                INTEGER,
+                    feed_updated             INTEGER DEFAULT 0
+                )""");
+        } catch (SQLHeavy.Error e) {
+            throw new DatabaseError.CREATE_TABLE("Error creating table 'feeds'");
+        }
     }
-
-	public int64 add_feed (Grss.FeedChannel channel) throws SQLHeavy.Error {
-		var id = this.db.execute_insert ("""
-            INSERT INTO `feeds` (
-                feed_title,
-                feed_source
-            ) VALUES (:title, :source)""",
-										 ":title", typeof(string), channel.get_title(),
-										 ":source", typeof(string), channel.get_source());
-		channel.set_data<int64> ("sqlid", id);
-		return id;
-	}
 
 	public int64 add_item (Grss.FeedItem item) throws SQLHeavy.Error {
 		var feed_id = item.get_parent().get_data<int64> ("sqlid");
@@ -89,9 +100,35 @@ public class Database {
 		item.set_data<int64> ("sqlid", id);
 		return id;
  	}
- 	
- 	public void update_feed (Grss.FeedChannel channel, GLib.List<Grss.FeedItem> items) throws SQLHeavy.Error {
-        add_feed (channel);
+
+	public int64 add_feed (Grss.FeedChannel channel) throws SQLHeavy.Error {
+		var id = this.db.execute_insert ("""
+            INSERT INTO `feeds` (
+                feed_title,
+                feed_source
+            ) VALUES (:title, :source)""",
+										 ":title", typeof(string), channel.get_title(),
+										 ":source", typeof(string), channel.get_source());
+		channel.set_data<int64> ("sqlid", id);
+		return id;
+	}
+
+    /** Update a feed already in database and its items */
+ 	public void update_feed (Feed feed) throws SQLHeavy.Error 
+     	requires (feed.id > 0) {
+		var query = this.db.prepare("""
+		    UPDATE `feeds` SET
+		        `feed_source`   = :source
+		        `feed_title`    = :title
+		        `feed_priority` = :priority
+		        `feed_updated`  = :updated
+	        WHERE `feed_id`     = :id
+        """);
+        query[":source"] = feed.source;
+        query[":title"] = feed.title;
+        query[":priority"] = feed.priority;
+        query[":updated"] = feed.updated_time;
+        query.execute();
  	}
 
 	public Fido.DBus.Feed[] get_feeds () {
