@@ -28,7 +28,7 @@ class Client : GLib.Object {
 		}
 	}
 
-	protected void cmd_feeds () {
+	protected void cmd_feeds () throws IOError {
 		Fido.DBus.Feed[] feeds = this.server().get_feeds ();
 		foreach (Fido.DBus.Feed feed in feeds) {
 			stdout.printf ("%s [%s]\n", feed.title, feed.url);
@@ -39,6 +39,10 @@ class Client : GLib.Object {
 		Fido.DBus.Item item = this.server().get_current_item ();
 		stdout.printf ("Title: %s\n", item.title);
 	}
+
+    protected void cmd_update_all () throws IOError {
+        this.server().update_all();
+    }
 
 	// Static stuff
 
@@ -51,7 +55,7 @@ class Client : GLib.Object {
 	};
 
 	static int main (string[] args) {
-		var client = new FidoClient ();
+		var client = new Fido.Client ();
 
 		var option_ctx = new OptionContext (""" - a news reader
 
@@ -59,6 +63,7 @@ Available commands:
 
   subscribe <URL>         Subscribe to a feed
   feeds                   List feeds
+  update all              Force updating of all feeds
   show                    Show current item""");
 
 
@@ -94,6 +99,15 @@ Available commands:
 					client.cmd_show ();
 					break;
 				
+				case "update":
+				    if (args.length > 1 && args[1] == "all")
+    				    client.cmd_update_all ();
+    				else {
+                        stderr.printf ("error: only \"update all\" is supported");
+                        return 1;
+    				}
+    				break;
+    				
 				default:
 					stderr.printf ("error: unknown command: %s\n",
 								   args[0]);
@@ -109,3 +123,4 @@ Available commands:
 
 }
 
+}

@@ -34,6 +34,9 @@ public class Fido.DBus.FeedStoreImpl : Object, Fido.DBus.FeedStore {
 		return item;
 	}
 
+    public void update_all () {
+        this.server.updater.force_update_all();
+    }
 /*
 	public delegate void DiscoverCallback (string [] feeds);
 	public void discover (string url, DiscoverCallback cb) {
@@ -49,7 +52,7 @@ public class Fido.Server : Object {
 	private Fido.DBus.FeedStoreImpl service;
 	private Fido.Database _database;
 	private MainLoop mainloop;
-	private Updater updater;
+	private Updater _updater;
 
 	public Server () {
 	    Logging.debug (Flag.SERVER, "Creating mainloop");
@@ -70,17 +73,18 @@ public class Fido.Server : Object {
 
 		this._database = new Database (db_filename);
 
-		this.updater = new Updater (this._database);
+		this._updater = new Updater (this._database);
 
 		var timeout = new TimeoutSource.seconds (1);
 		timeout.set_callback(() => { 
-				updater.check_for_updates (); 
+				_updater.check_for_updates (); 
 				return true;
 			});
 		timeout.attach (this.mainloop.get_context ());
     }
 
 	public Fido.Database database { get { return this._database; } }
+	public Fido.Updater updater { get { return this._updater; } }
 
     public string get_user_data_directory() {
         return Path.build_filename(Environment.get_user_data_dir(), "fido");

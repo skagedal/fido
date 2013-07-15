@@ -13,5 +13,6 @@ namespace Fido.DBus {
 		public abstract void subscribe (string url) throws IOError;
 		public abstract Item get_current_item () throws IOError;
 		public abstract Feed[] get_feeds () throws IOError;
+		public abstract void update_all () throws IOError;
 	}
 }

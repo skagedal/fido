@@ -5,7 +5,7 @@ namespace Fido {
 public class Updater : Object {
 
 	// How often, in seconds, each feed should be updated.
-	public static const int UPDATE_INTERVAL = 10; 
+	public static const int UPDATE_INTERVAL = 600; 
 
 	// How many download jobs we can have simultaneously
 	public static const int MAX_JOBS = 5;
@@ -69,25 +69,31 @@ public class Updater : Object {
 	public void work_on_queue () {
 		while (jobs_to_run.size > 0 && running_jobs.size < MAX_JOBS) {
 			var feed = jobs_to_run.poll ();
-			stdout.printf ("Starting download of %s\n", feed.source);
+			Logging.debug (Flag.UPDATER, "Starting download of %s\n", feed.source);
 			var msg = new Soup.Message ("GET", feed.source);
 			session.queue_message (msg, (Soup.SessionCallback) handle_update);
 			running_jobs[feed.source] = feed;
 		}
 	}
 	
-	public void check_for_updates () {
-		stdout.printf ("Time for update!\n");
-		var cutoff = new DateTime.now_utc().add_seconds(-UPDATE_INTERVAL);
-		var feeds = database.get_feeds_not_updated_since(cutoff);
+	private void queue_feeds (Gee.List<Feed> feeds) {
 		foreach (var feed in feeds) {
-			stdout.printf ("Queueing: %s [%s]\n", feed.title, feed.source);
+			Logging.debug (Flag.UPDATER, "Queueing: %s [%s]", feed.title, feed.source);
 			this.jobs_to_run.offer (feed);
 		}
 		if (!feeds.is_empty) {
 			work_on_queue (); 
 		}
-
+	}
+	
+	public void check_for_updates () {
+		Logging.message (Flag.UPDATER, "Time for update!");
+		var cutoff = new DateTime.now_utc().add_seconds(-UPDATE_INTERVAL);
+		queue_feeds(database.get_feeds_not_updated_since(cutoff));
+	}
+	
+	public void force_update_all () {
+        queue_feeds(database.get_all_feeds());
 	}
 }
 

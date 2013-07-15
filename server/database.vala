@@ -118,9 +118,9 @@ public class Database {
      	requires (feed.id > 0) {
 		var query = this.db.prepare("""
 		    UPDATE `feeds` SET
-		        `feed_source`   = :source
-		        `feed_title`    = :title
-		        `feed_priority` = :priority
+		        `feed_source`   = :source,
+		        `feed_title`    = :title,
+		        `feed_priority` = :priority,
 		        `feed_updated`  = :updated
 	        WHERE `feed_id`     = :id
         """);
@@ -128,6 +128,7 @@ public class Database {
         query[":title"] = feed.title;
         query[":priority"] = feed.priority;
         query[":updated"] = feed.updated_time;
+        query[":id"] = feed.id;
         query.execute();
  	}
 
@@ -150,6 +151,24 @@ public class Database {
 		return feedlist;
 	}
 
+    public Gee.List<Fido.Feed> get_all_feeds () {
+        Gee.List<Fido.Feed> feeds = new Gee.LinkedList<Fido.Feed> ();
+		try {
+			var query = this.db.prepare("""
+                SELECT `feed_id`, `feed_title`, `feed_source`
+                FROM `feeds`""");
+			for (var r = query.execute (); !r.finished; r.next ()) {
+				var feed = new Fido.Feed.with_id (r.fetch_int (0));
+				feed.title = r.fetch_string (1) ?? "";
+				feed.source = r.fetch_string (2) ?? "";
+				feeds.add (feed);
+			}
+		} catch (SQLHeavy.Error e) {
+			Logging.critical (Flag.DATABASE, "get_all_feeds got SQL error: %s\n", e.message);
+		}
+		return feeds;
+	}
+
 	public Gee.List<Fido.Feed> get_feeds_not_updated_since (DateTime d) {
 		int64 t = d.to_unix ();
 		Gee.List<Fido.Feed> feeds = new Gee.LinkedList<Fido.Feed> ();
@@ -167,7 +186,7 @@ public class Database {
 				feeds.add (feed);
 			}
 		} catch (SQLHeavy.Error e) {
-			stderr.printf ("get_feeds_not_updated_since() got SQL error: %s\n", e.message);
+			Logging.critical (Flag.DATABASE, "get_feeds_not_updated_since() got SQL error: %s\n", e.message);
 		}
 		return feeds;
 	}
