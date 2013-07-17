@@ -8,7 +8,7 @@ LIBNAMES =                      \
 	gee-1.0                     \
 	libsoup-2.4                 \
 	libxml2-2.0                 \
-	sqlheavy-0.1                \
+	sqlheavy-0.2                \
 	libgrss-0.5 
 LIBS=$(LIBNAMES:%=--pkg %) --vapidir=../vapi
 

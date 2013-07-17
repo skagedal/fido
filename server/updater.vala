@@ -59,10 +59,9 @@ public class Updater : Object {
             feed.parse(body);
             feed.updated_time = new DateTime.now_utc().to_unix();
             database.update_feed(feed);
-        } catch (SQLHeavy.Error e) {
-            Logging.error (Flag.UPDATER, 
-                           "Updating feed %s caused database error: %s",
-                           feed.source, e.message);
+        } catch (DatabaseError e) {
+            Logging.critical (Flag.UPDATER, 
+                              "Database error: %s", e.message);
         }
     }
 
@@ -78,8 +77,10 @@ public class Updater : Object {
 	
 	private void queue_feeds (Gee.List<Feed> feeds) {
 		foreach (var feed in feeds) {
-			Logging.debug (Flag.UPDATER, "Queueing: %s [%s]", feed.title, feed.source);
-			this.jobs_to_run.offer (feed);
+		    if (!(feed in this.jobs_to_run)) {
+			    Logging.debug (Flag.UPDATER, "Queueing: %s [%s]", feed.title, feed.source);
+			    this.jobs_to_run.offer (feed);
+		    }
 		}
 		if (!feeds.is_empty) {
 			work_on_queue (); 

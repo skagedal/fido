@@ -6,7 +6,8 @@ namespace Fido {
 
 public errordomain DatabaseError {
     FILE_NOT_FOUND,
-    CREATE_TABLE
+    CREATE_TABLE,
+    UPDATE,
 }
 
 public class Database {
@@ -19,7 +20,10 @@ public class Database {
 	 * @filename: if null, use in-memory database
 	 */
     public Database (string? filename = null) throws DatabaseError, SQLHeavy.Error {
-        Logging.message (Flag.DATABASE, @"Connecting to SQLite database: $filename");
+        if (filename == null)
+            Logging.message (Flag.DATABASE, @"Connecting to SQLite database in memory");
+        else
+            Logging.message (Flag.DATABASE, @"Connecting to SQLite database: $filename");
         try {
     		this.db = new SQLHeavy.Database (filename);
     	} catch (SQLHeavy.Error e) {
@@ -57,12 +61,14 @@ public class Database {
                     item_updated             INTEGER,
                     item_is_read             INTEGER DEFAULT 0,
                     item_mute                INTEGER,
+                    item_stored              INTEGER DEFAULT (strftime('%s')),
                     feed_id                  INTEGER NOT NULL,
+                    
                     UNIQUE (feed_id, item_guid)
                 )
                 """);
         } catch (SQLHeavy.Error e) {
-            throw new DatabaseError.CREATE_TABLE("Error creating table 'items'");
+            throw new DatabaseError.CREATE_TABLE(@"Error creating table 'items': $(e.message)");
         }
         try {
             this.db.execute ("""
@@ -80,77 +86,95 @@ public class Database {
         }
     }
 
-	public int64 add_item (Grss.FeedItem item) throws SQLHeavy.Error {
-		var feed_id = item.get_parent().get_data<int64> ("sqlid");
-		var id = this.db.execute_insert ("""
-            INSERT INTO `items` (
-                item_guid,
-                item_title,
-                item_content,
-                item_posted,
-                item_updated,
-                feed_id
-            ) VALUES (:guid, :title, :content, :posted, :updated, :feed_id)""",
-										 ":guid", typeof(string), item.get_id(),
-										 ":title", typeof(string), item.get_title(),
-										 ":content", typeof(string), item.get_description(),
-										 ":posted", typeof(int64), (int64)item.get_publish_time(),
-										 ":updated", typeof(int64), (int64)item.get_publish_time(),
-										 ":feed_id", typeof(int64), feed_id);
-		item.set_data<int64> ("sqlid", id);
-		return id;
- 	}
-
-	public int64 add_feed (Grss.FeedChannel channel) throws SQLHeavy.Error {
-		var id = this.db.execute_insert ("""
-            INSERT INTO `feeds` (
-                feed_title,
-                feed_source
-            ) VALUES (:title, :source)""",
-										 ":title", typeof(string), channel.get_title(),
-										 ":source", typeof(string), channel.get_source());
-		channel.set_data<int64> ("sqlid", id);
-		return id;
-	}
 
     /** Update a feed already in database and its items */
- 	public void update_feed (Feed feed) throws SQLHeavy.Error 
-     	requires (feed.id > 0) {
-		var query = this.db.prepare("""
-		    UPDATE `feeds` SET
-		        `feed_source`   = :source,
-		        `feed_title`    = :title,
-		        `feed_priority` = :priority,
-		        `feed_updated`  = :updated
-	        WHERE `feed_id`     = :id
-        """);
-        query[":source"] = feed.source;
-        query[":title"] = feed.title;
-        query[":priority"] = feed.priority;
-        query[":updated"] = feed.updated_time;
-        query[":id"] = feed.id;
-        query.execute();
+ 	public void update_feed (Feed feed) throws DatabaseError 
+         	requires (feed.id > 0) 
+         	requires (feed.source != null) {
+        try {
+		    var query = this.db.prepare("""
+		        UPDATE `feeds` SET
+		            `feed_source`   = :source,
+		            `feed_title`    = :title,
+		            `feed_priority` = :priority,
+		            `feed_updated`  = :updated
+	            WHERE `feed_id`     = :id
+            """);
+            query[":source"] = feed.source;
+            query[":title"] = feed.title;
+            query[":priority"] = feed.priority;
+            query[":updated"] = feed.updated_time;
+            query[":id"] = feed.id;
+            query.execute();
+        } catch (SQLHeavy.Error e) {
+            throw new DatabaseError.UPDATE(@"Error writing info for feed $(feed.id) [$(feed.source)] to database");
+        }
+        foreach (var item in feed.items) 
+            add_or_update_item (feed, item);
  	}
 
-	public Fido.DBus.Feed[] get_feeds () {
-		var feedlist = new Fido.DBus.Feed[0]; 
-		try {
-			var results = this.db.execute ("""
-                SELECT `feed_title`, `feed_source`
-                FROM `feeds`""");
+    public void add_or_update_item (Feed feed, Item item) throws DatabaseError
+            requires (feed.id > 0)
+            requires (item.guid != null) {
 
-			for (int record = 0; !results.finished; record++, results.next ()) {
-				var feed = Fido.DBus.Feed ();
-				feed.title = results.fetch_string (0) ?? "";
-				feed.url = results.fetch_string (1) ?? "";
-				feedlist += feed;
-			}
-		} catch (SQLHeavy.Error e) {
-			stderr.printf ("get_feeds() got SQL error: %s\n", e.message);
-		}
-		return feedlist;
-	}
+        // Try INSERT, if that fails because it already exists, do UPDATE.
+        // I wish I could just do that in one SQL command but can't fgure out
+        // how.  INSERT OR REPLACE creates a new row and doesn't copy the
+        // fields I'm not updating... :/
 
+        try {
+		    var query = this.db.prepare("""
+                INSERT OR ABORT INTO `items` (
+                    feed_id,
+                    item_guid,
+                    item_title,
+                    item_content,
+                    item_posted,
+                    item_updated
+                ) VALUES (:feed_id, :guid, :title, :content, :posted, :updated)
+            """);
+            query[":feed_id"] = feed.id;
+            query[":guid"] = item.guid;
+            query[":title"] = item.title;
+            query[":content"] = item.description;
+            query[":posted"] = item.publish_time;
+            query[":updated"] = item.publish_time;
+            query.execute();
+        } catch (SQLHeavy.Error e) {
+            if (e is SQLHeavy.Error.CONSTRAINT) {
+                Logging.message(Flag.DATABASE, @"Item $(item.guid) already existed; updating it instead");
+                update_item (feed, item);
+            } else {
+                throw new DatabaseError.UPDATE(@"Error adding item with guid $(item.guid) to database: $(e.message)");
+            }
+        }
+    }
+
+    public void update_item (Feed feed, Item item) throws DatabaseError
+            requires (feed.id > 0)
+            requires (item.guid != null) {
+        try {    
+            var query = this.db.prepare("""
+                UPDATE `items` SET
+                    item_title   = :title,
+                    item_content = :content,
+                    item_posted  = :posted,
+                    item_updated = :updated
+                WHERE feed_id    = :feed_id 
+                  AND item_guid =  :guid
+            """);
+            query[":feed_id"] = feed.id;
+            query[":guid"] = item.guid;
+            query[":title"] = item.title;
+            query[":content"] = item.description;
+            query[":posted"] = item.publish_time;
+            query[":updated"] = item.publish_time;
+            query.execute();
+        } catch (SQLHeavy.Error e) {
+            throw new DatabaseError.UPDATE(@"Error updating item with guid $(item.guid): $(e.message)");
+        }
+    }
+    
     public Gee.List<Fido.Feed> get_all_feeds () {
         Gee.List<Fido.Feed> feeds = new Gee.LinkedList<Fido.Feed> ();
 		try {
@@ -202,6 +226,62 @@ public class Database {
 		// in the future.
 
     }
+
+    // The following methods should be rewritten to use Fido.Feed/Item.
+
+    // This one is replace above with get_all_feeds.
+	public Fido.DBus.Feed[] get_feeds () {
+		var feedlist = new Fido.DBus.Feed[0]; 
+		try {
+			var results = this.db.execute ("""
+                SELECT `feed_title`, `feed_source`
+                FROM `feeds`""");
+
+			for (int record = 0; !results.finished; record++, results.next ()) {
+				var feed = Fido.DBus.Feed ();
+				feed.title = results.fetch_string (0) ?? "";
+				feed.url = results.fetch_string (1) ?? "";
+				feedlist += feed;
+			}
+		} catch (SQLHeavy.Error e) {
+			stderr.printf ("get_feeds() got SQL error: %s\n", e.message);
+		}
+		return feedlist;
+	}
+
+	public int64 add_item (Grss.FeedItem item) throws SQLHeavy.Error {
+		var feed_id = item.get_parent().get_data<int64> ("sqlid");
+		var id = this.db.execute_insert ("""
+            INSERT INTO `items` (
+                item_guid,
+                item_title,
+                item_content,
+                item_posted,
+                item_updated,
+                feed_id
+            ) VALUES (:guid, :title, :content, :posted, :updated, :feed_id)""",
+										 ":guid", typeof(string), item.get_id(),
+										 ":title", typeof(string), item.get_title(),
+										 ":content", typeof(string), item.get_description(),
+										 ":posted", typeof(int64), (int64)item.get_publish_time(),
+										 ":updated", typeof(int64), (int64)item.get_publish_time(),
+										 ":feed_id", typeof(int64), feed_id);
+		item.set_data<int64> ("sqlid", id);
+		return id;
+ 	}
+
+	public int64 add_feed (Grss.FeedChannel channel) throws SQLHeavy.Error {
+		var id = this.db.execute_insert ("""
+            INSERT INTO `feeds` (
+                feed_title,
+                feed_source
+            ) VALUES (:title, :source)""",
+										 ":title", typeof(string), channel.get_title(),
+										 ":source", typeof(string), channel.get_source());
+		channel.set_data<int64> ("sqlid", id);
+		return id;
+	}
+
 
 }
 

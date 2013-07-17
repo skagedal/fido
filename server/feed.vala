@@ -13,16 +13,17 @@ namespace Fido {
 
 public class Feed : Object {
 	private Grss.FeedChannel grss;
-	private Gee.Set<Item> items;
+
+    public Gee.Set<Item> items { get; private set; }
 	
 	public Feed.with_id (int id) {
 		this._id = id;
 		grss = new Grss.FeedChannel ();
-		items = new Gee.HashSet<Item> ();
+		_items = new Gee.HashSet<Item> ();
 	}
 	public Feed.from_grss (Grss.FeedChannel channel) {
         grss = channel;
-        items = new Gee.HashSet<Item> ();
+        _items = new Gee.HashSet<Item> ();
 	    }
 
     /** row id from database - null means this feed isn't connected to a database row, a new feed */
@@ -87,7 +88,7 @@ public class Feed : Object {
 	    get { return grss.get_language (); }
 	    set { grss.set_language (value); }
 	}
-    // FIXME: do we lose data here, converting from int64 to long?
+    // Sorry for year 2038 bug, should fix libgrss...
 	public int64 publish_time { 
 	    get { return (int64) grss.get_publish_time (); }
 	    set { grss.set_publish_time ((long) value); }
@@ -110,10 +111,10 @@ Grss to wrap:
             var grss_items = parser.parse_from_string (grss_feed, body);
 
             this.grss = grss_feed;
-            this.items.clear ();
+            this._items.clear ();
             foreach (var grss_item in grss_items) {
                 stdout.printf (" - %s\n", grss_item.get_title ());
-                this.items.add (new Item.from_grss (this, grss_item));
+                this._items.add (new Item.from_grss (this, grss_item));
             }
         } catch (Error e) {
             Logging.warning (Flag.UPDATER, "Parse error: %s", e.message);
