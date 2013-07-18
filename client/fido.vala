@@ -29,14 +29,14 @@ class Client : GLib.Object {
 	}
 
 	protected void cmd_feeds () throws IOError {
-		Fido.DBus.Feed[] feeds = this.server().get_feeds ();
-		foreach (Fido.DBus.Feed feed in feeds) {
-			stdout.printf ("%s [%s]\n", feed.title, feed.url);
+		FeedSerial[] feeds = this.server().get_feeds ();
+		foreach (var feed in feeds) {
+			stdout.printf ("%s [%s]\n", feed.title, feed.source);
 		}
 	}
 
 	protected void cmd_show () throws IOError {
-		Fido.DBus.Item item = this.server().get_current_item ();
+		ItemSerial item = this.server().get_current_item ();
 		stdout.printf ("Title: %s\n", item.title);
 	}
 

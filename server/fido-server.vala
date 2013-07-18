@@ -21,17 +21,36 @@ public class Fido.DBus.FeedStoreImpl : Object, Fido.DBus.FeedStore {
 			var channel = new Grss.FeedChannel.with_source (url);
 			this.server.database.add_feed (channel);
 		} catch (SQLHeavy.Error e) {
-			Logging.error (Flag.SERVER, "subscribe: database error");
+			Logging.critical (Flag.SERVER, "subscribe: database error");
 		}
 	}
 
-	public Fido.DBus.Feed[] get_feeds () {
-		return this.server.database.get_feeds ();
+    private FeedSerial[] serialize_feeds (Gee.List<Feed> feeds) {
+		var feedlist = new FeedSerial[0]; 
+		foreach (var feed in feeds)
+		    feedlist += feed.to_serial();
+		return feedlist;        
+    }
+
+	public FeedSerial[] get_feeds () {
+        try {
+            var feeds = server.database.get_all_feeds();
+    		return serialize_feeds(feeds);
+    	} catch (DatabaseError e) {
+            Logging.critical(Flag.SERVER, @"get_feeds: database error: $(e.message)");
+    	}
+    	return new FeedSerial[0];
 	}
 
-	public Fido.DBus.Item get_current_item () {
-		Item item = { "Test item" };
-		return item;
+	public ItemSerial get_current_item () {
+        try {
+            var item = server.database.get_first_item();
+            if (item != null)
+                return item.to_serial();
+    	} catch (DatabaseError e) {
+            Logging.critical(Flag.SERVER, @"get_current_item: database error: $(e.message)");
+    	}
+        return ItemSerial();
 	}
 
     public void update_all () {
@@ -75,7 +94,7 @@ public class Fido.Server : Object {
 
 		this._updater = new Updater (this._database);
 
-		var timeout = new TimeoutSource.seconds (1);
+		var timeout = new TimeoutSource.seconds (300);
 		timeout.set_callback(() => { 
 				_updater.check_for_updates (); 
 				return true;

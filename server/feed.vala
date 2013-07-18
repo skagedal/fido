@@ -26,6 +26,28 @@ public class Feed : Object {
         _items = new Gee.HashSet<Item> ();
 	    }
 
+    public Feed.from_serial (FeedSerial serial) {
+        this._id = serial.id;
+        this.source = serial.source;
+        this.title = serial.title;
+        this.priority = serial.priority;
+        this.publish_time = serial.publish_time;
+        this.update_time = serial.update_time;
+    }
+    
+    public FeedSerial to_serial () {
+        var serial = FeedSerial();
+        serial.id = this._id;
+        serial.source = this.source;
+        serial.title = this.title ?? "";
+        serial.priority = this.priority;
+        serial.publish_time = this.publish_time;
+        serial.update_time = this.update_time;
+        return serial;
+    }
+    
+    public Grss.FeedChannel grss_feed { get { return grss; } }
+    
     /** row id from database - null means this feed isn't connected to a database row, a new feed */
     public int id { get; set; }
 

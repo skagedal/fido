@@ -8,6 +8,7 @@ public errordomain DatabaseError {
     FILE_NOT_FOUND,
     CREATE_TABLE,
     UPDATE,
+    SELECT
 }
 
 public class Database {
@@ -59,7 +60,7 @@ public class Database {
                     item_content             TEXT,
                     item_posted              INTEGER,
                     item_updated             INTEGER,
-                    item_is_read             INTEGER DEFAULT 0,
+                    item_read_time           INTEGER DEFAULT 0,
                     item_mute                INTEGER,
                     item_stored              INTEGER DEFAULT (strftime('%s')),
                     feed_id                  INTEGER NOT NULL,
@@ -175,7 +176,7 @@ public class Database {
         }
     }
     
-    public Gee.List<Fido.Feed> get_all_feeds () {
+    public Gee.List<Fido.Feed> get_all_feeds () throws DatabaseError {
         Gee.List<Fido.Feed> feeds = new Gee.LinkedList<Fido.Feed> ();
 		try {
 			var query = this.db.prepare("""
@@ -188,12 +189,12 @@ public class Database {
 				feeds.add (feed);
 			}
 		} catch (SQLHeavy.Error e) {
-			Logging.critical (Flag.DATABASE, "get_all_feeds got SQL error: %s\n", e.message);
+			throw new DatabaseError.SELECT("Error getting feeds: $(e.message)");
 		}
 		return feeds;
 	}
 
-	public Gee.List<Fido.Feed> get_feeds_not_updated_since (DateTime d) {
+	public Gee.List<Feed> get_feeds_not_updated_since (DateTime d) {
 		int64 t = d.to_unix ();
 		Gee.List<Fido.Feed> feeds = new Gee.LinkedList<Fido.Feed> ();
 		
@@ -215,6 +216,44 @@ public class Database {
 		return feeds;
 	}
 
+    public Item? get_first_item () throws DatabaseError {
+        try {
+            var query = this.db.prepare("""
+                SELECT
+                    feed_id, 
+                    feed_title,
+                    feed_source,
+                    item_id,
+                    item_guid, 
+                    item_title, 
+                    item_content, 
+                    item_posted,
+                    item_updated
+                FROM `items`, `feeds` USING (`feed_id`)
+                WHERE item_read_time < item_updated
+                  AND item_updated < (strftime('%s'))
+                ORDER BY feed_priority DESC, item_updated
+            """);
+            var r = query.execute();
+            if (r.finished)
+                return null;
+            int c = 0;
+            var feed = new Feed.with_id (r.fetch_int    (c++));
+			feed.title =                 r.fetch_string (c++) ?? "";
+			feed.source =                r.fetch_string (c++) ?? "";
+            var item = new Item(feed);
+            item.id =                    r.fetch_int    (c++);
+            item.guid =                  r.fetch_string (c++);
+            item.title =                 r.fetch_string (c++);
+            item.description =           r.fetch_string (c++);
+            item.publish_time =          r.fetch_int64  (c++);
+            // FIXME: updated time not supported in libgrss yet
+            return item;
+        } catch (SQLHeavy.Error e) {
+            throw new DatabaseError.SELECT(@"Error while fetching item: $(e.message)");
+        }
+    }
+
     public void show_first_item () {
 
 		// SELECT to get unread items should have:
@@ -230,6 +269,7 @@ public class Database {
     // The following methods should be rewritten to use Fido.Feed/Item.
 
     // This one is replace above with get_all_feeds.
+/*
 	public Fido.DBus.Feed[] get_feeds () {
 		var feedlist = new Fido.DBus.Feed[0]; 
 		try {
@@ -248,7 +288,7 @@ public class Database {
 		}
 		return feedlist;
 	}
-
+*/
 	public int64 add_item (Grss.FeedItem item) throws SQLHeavy.Error {
 		var feed_id = item.get_parent().get_data<int64> ("sqlid");
 		var id = this.db.execute_insert ("""

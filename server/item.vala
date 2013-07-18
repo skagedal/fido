@@ -5,6 +5,7 @@ public class Item : Object {
 
     public Item (Feed parent) {
         this._parent = parent;
+        this.grss = new Grss.FeedItem(parent.grss_feed);
     }
 
 	public Item.from_grss (Feed parent, Grss.FeedItem item) {
@@ -12,6 +13,29 @@ public class Item : Object {
 		this.grss = item;
 	}
 	
+	public Item.from_serial (ItemSerial item) {
+        this.id = item.id;
+        // FIXME this._parent = find parent with id item.feed_id;
+        this.guid = item.guid;
+        this.title = item.title;
+        this.source = item.source;
+        this.author = item.author;
+        this.description = item.description;
+        this.publish_time = item.publish_time;
+        
+	}
+	public ItemSerial to_serial() {
+        var item = ItemSerial();
+        item.id = this.id;
+        item.feed_id = this._parent.id;
+        item.guid = this.grss.get_id() ?? ""; // we don't send fake guids
+        item.title = this.title ?? "";
+        item.source = this.source ?? "";
+        item.author = this.author ?? "";
+        item.description = this.description ?? "";
+        item.publish_time = this.publish_time;
+        return item;
+	}
 	public Feed parent { get; private set; }
 
     /**
@@ -35,8 +59,21 @@ public class Item : Object {
             // publishing time from feed isn't exposed by libgrss...
             return this.grss.get_title ();
         }
+        set {
+            if (value != "")
+                grss.set_id(value);
+        }
     }
 
+    public int id { get; set; }
+    public string title {
+	    get { return grss.get_title (); }
+	    set { grss.set_title (value); }
+	}
+    public string source {
+	    get { return grss.get_source (); }
+	    set { grss.set_source (value); }
+	}
     public string author {
 	    get { return grss.get_author (); }
 	    set { grss.set_author (value); }
@@ -44,14 +81,6 @@ public class Item : Object {
     public string description {
 	    get { return grss.get_description (); }
 	    set { grss.set_description (value); }
-	}
-    public string source {
-	    get { return grss.get_source (); }
-	    set { grss.set_source (value); }
-	}
-    public string title {
-	    get { return grss.get_title (); }
-	    set { grss.set_title (value); }
 	}
     // Sorry for year 2038 bug, should fix libgrss...
     public int64 publish_time {

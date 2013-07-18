@@ -88,13 +88,18 @@ public class Updater : Object {
 	}
 	
 	public void check_for_updates () {
-		Logging.message (Flag.UPDATER, "Time for update!");
+		Logging.message (Flag.UPDATER, "Checking for feeds to update...");
 		var cutoff = new DateTime.now_utc().add_seconds(-UPDATE_INTERVAL);
 		queue_feeds(database.get_feeds_not_updated_since(cutoff));
 	}
 	
 	public void force_update_all () {
-        queue_feeds(database.get_all_feeds());
+        try {
+            queue_feeds(database.get_all_feeds());
+        } catch (DatabaseError e) {
+            Logging.critical (Flag.UPDATER, 
+                              "Database error: %s", e.message);
+        }
 	}
 }
 
