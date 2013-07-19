@@ -38,6 +38,7 @@ class Client : GLib.Object {
 	protected void cmd_show () throws IOError {
 		ItemSerial item = this.server().get_current_item ();
 		stdout.printf ("Title: %s\n", item.title);
+		stdout.printf (item.description);
 	}
 
     protected void cmd_update_all () throws IOError {
@@ -53,6 +54,8 @@ class Client : GLib.Object {
 		  "Display version number", null },
 		{ null }
 	};
+
+
 
 	static int main (string[] args) {
 		var client = new Fido.Client ();
@@ -82,10 +85,14 @@ Available commands:
 			return 0;
 		}
 
-		args = args[1:args.length];
 
-		try {
-			if (args.length > 0) {
+		if (args.length == 1) {
+    		var app = new FidoApplication ();
+    		return app.run (args);
+		} else {
+       		args = args[1:args.length];
+
+		    try {
 				switch (args[0]) {
 				case "subscribe":
 					client.cmd_subscribe (args[1:args.length]);
@@ -113,10 +120,10 @@ Available commands:
 								   args[0]);
 					return 1;
 				}
-			}
-		} catch (IOError e) {
-			stderr.printf ("%s\n", e.message);
-			return 1;
+		    } catch (IOError e) {
+			    stderr.printf ("%s\n", e.message);
+			    return 1;
+		    }
 		}
 		return 0;
 	}

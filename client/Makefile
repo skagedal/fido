@@ -1,14 +1,26 @@
 VALAC=valac-0.20
-VALAFLAGS:=--target-glib=2.36 --save-temps $(VALAFLAGS)
+# use --Xcc=-w to disable C warnings
+VALAFLAGS=--Xcc=-w --Xcc=-g
+VALAFLAGS:=--target-glib=2.36 --save-temps --thread $(VALAFLAGS)
+LIBNAMES =                          \
+	gobject-2.0                     \
+	gio-2.0                         \
+	gee-1.0                         \
+	gtk+-3.0                        \
+	webkitgtk-3.0
+LIBS=$(LIBNAMES:%=--pkg %) --vapidir=../vapi
 
-all: fido fido-window
+fido_client_SOURCES =               \
+    fido.vala                       \
+    fido-application.vala           \
+    fido-window.vala                \
+    ../server/dbus-interface.vala
 
-fido: fido.vala ../server/dbus-interface.vala
-	valac --pkg gio-2.0 $^ -o $@ $(VALAFLAGS)
+all: fido 
 
-fido-window: fido-window.vala
-	valac --vapidir=. --pkg gtk+-3.0 --pkg webkitgtk-3.0 --thread $^ -o $@ $(VALAFLAGS)
+fido: $(fido_client_SOURCES)
+	$(VALAC) $(LIBS) $^ -o $@ $(VALAFLAGS)
 	
 clean:
-	-rm fido fido-window *.c
+	-rm fido *.c
 

@@ -95,11 +95,14 @@ public class ActionView : Box {
 /* 
  * The main window
  */
-public class AppWindow : Window {
+public class AppWindow : Gtk.ApplicationWindow {
     private ItemView item_view;
     private ActionView action_view;
+    private FidoApplication _app;
     
-    public AppWindow () {
+    public AppWindow (FidoApplication app) {
+        // base(app);
+        this._app = app;
 		this.title = "Fido News Reader";
         this.window_position = WindowPosition.CENTER;
         set_default_size (400, 300);
@@ -137,17 +140,6 @@ public class AppWindow : Window {
         file_chooser.destroy ();
     }
 
-
-    public static int main (string [] args) {
-	Gtk.init (ref args);
-	
-	var window = new AppWindow ();
-	window.destroy.connect (Gtk.main_quit);
-	window.show_all ();
-	
-	Gtk.main ();
-	return 0;
-    }
 }
 
 }
