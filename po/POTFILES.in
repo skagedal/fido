@@ -1,0 +1,7 @@
+# List of source files containing translatable strings.
+# Please keep this file sorted alphabetically.
+client/fido-application.vala
+client/fido-window.vala
+[type: gettext/glade]client/fido-main-window.ui
+[type: gettext/glade]client/fido-menu.ui
+
