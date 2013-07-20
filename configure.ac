@@ -8,7 +8,7 @@ AC_INIT([fido],
 
 AC_CONFIG_HEADERS(config.h)
 AC_CONFIG_SRCDIR(server/main.vala)
-AC_CONFIG_SRCDIR(client/main.vala)
+AC_CONFIG_SRCDIR(client/fido-main.vala)
 AC_CONFIG_MACRO_DIR([m4])
 
 AC_CANONICAL_TARGET
@@ -49,6 +49,11 @@ PKG_CHECK_MODULES(FIDO, [
     gio-2.0 >= 2.30.0
     gee-1.0 >= 0.6.0
     webkitgtk-3.0
+])
+
+PKG_CHECK_MODULES(FIDO_CMD, [
+    gio-2.0 >= 2.30.0
+    gee-1.0 >= 0.6.0
 ])
 
 PKG_CHECK_MODULES(FIDOD, [

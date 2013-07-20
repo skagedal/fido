@@ -5,27 +5,53 @@ AM_CPPFLAGS = \
 	-DGNOMELOCALEDIR=\""$(prefix)/$(DATADIRNAME)/locale"\" 	\
 	$(NULL)
 
-bin_PROGRAMS = fido
+bin_PROGRAMS = fido fido-cmd
 
-fido_VALAFLAGS = \
-	--vapidir=$(top_builddir)/libgd		\
-	--vapidir=$(top_builddir)/vapi	        \
-	--pkg gtk+-3.0				\
-	--pkg gio-2.0                           \
-	--pkg gd-1.0                            \
-	--pkg webkitgtk-3.0                     \
-	--pkg gee-1.0                           \
+fido_cmd_VALAFLAGS = 					\
+	--vapidir=$(top_builddir)/vapi			\
+	--pkg gio-2.0					\
+	--pkg gee-1.0					\
+	--pkg config					\
 	--target-glib=2.36
 
-VALA_SOURCES = \
+fido_VALAFLAGS = \
+	--vapidir=$(top_builddir)/libgd			\
+	--vapidir=$(top_builddir)/vapi			\
+	--pkg gtk+-3.0					\
+	--pkg gio-2.0					\
+	--pkg gd-1.0					\
+	--pkg webkitgtk-3.0				\
+	--pkg gee-1.0					\
+	--pkg config
+	--target-glib=2.36
+
+FIDO_CMD_VALA_SOURCES = 				\
+        $(top_srcdir)/server/fido-dbus-interface.vala   \
+	fido-cmd-main.vala				
+	
+FIDO_VALA_SOURCES = \
         $(top_srcdir)/server/fido-dbus-interface.vala   \
 	fido-application.vala		                \
 	fido-window.vala                                \
-	main.vala			                \
+	fido-main.vala			                \
 	$(NULL)
 
 fido_SOURCES = \
-	$(VALA_SOURCES)	
+	$(FIDO_VALA_SOURCES)	
+
+fido_cmd_SOURCES = \
+	$(FIDO_CMD_VALA_SOURCES)
+
+fido_cmd_LDFLAGS = -export-dynamic
+fido_cmd_LDADD =				\
+	$(FIDO_CMD_LIBS)			\
+	$(NULL)
+
+fido_LDFLAGS = -export-dynamic
+fido_LDADD =                                    \
+	$(FIDO_LIBS)			        \
+	$(top_builddir)/libgd/libgd.la          \
+	$(NULL)
 
 AM_CFLAGS = \
 	$(FIDO_CFLAGS)		                \
@@ -33,13 +59,6 @@ AM_CFLAGS = \
 	-Wall				        \
 	-Wno-unused-but-set-variable	        \
 	-Wno-unused-variable		        \
-	$(NULL)
-
-fido_LDFLAGS = -export-dynamic
-fido_LDADD =                                    \
-	-lm				        \
-	$(FIDO_LIBS)			        \
-	$(top_builddir)/libgd/libgd.la          \
 	$(NULL)
 
 MAINTAINERCLEANFILES =	                        \

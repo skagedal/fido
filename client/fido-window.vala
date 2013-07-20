@@ -98,9 +98,9 @@ public class ActionView : Box {
 public class AppWindow : Gtk.ApplicationWindow {
     private ItemView item_view;
     private ActionView action_view;
-    private FidoApplication _app;
+    private Fido.Application _app;
     
-    public AppWindow (FidoApplication app) {
+    public AppWindow (Fido.Application app) {
         // base(app);
         this._app = app;
 		this.title = "Fido News Reader";
