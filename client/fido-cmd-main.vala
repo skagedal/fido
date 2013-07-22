@@ -58,14 +58,14 @@ namespace Fido {
         static int main (string[] args) {
             var client = new Fido.FidoCmd ();
 
-            var option_ctx = new OptionContext (""" - a news reader
+            var option_ctx = new OptionContext (_(""" - commandline interface for the Fido News Reader
 
 Available commands:
 
   subscribe <URL>         Subscribe to a feed
   feeds                   List feeds
   update all              Force updating of all feeds
-  show                    Show current item""");
+  show                    Show current item"""));
 
             option_ctx.add_main_entries (main_options, null);
 
@@ -77,12 +77,11 @@ Available commands:
             }
 
             if (version) {
-                stdout.printf ("fido version %s\n", Config.VERSION);
+                stdout.printf ("fido-cmd %s\n", Config.VERSION);
                 return 0;
             }
 
-
-                   args = args[1:args.length];
+            args = args[1:args.length];
 
             try {
                 switch (args[0]) {
