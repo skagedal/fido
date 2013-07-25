@@ -49,6 +49,7 @@ PKG_CHECK_MODULES(FIDO, [
     gio-2.0 >= 2.30.0
     gee-1.0 >= 0.6.0
     webkitgtk-3.0
+    libgrss-0.5 >= 0.5.0    
 ])
 
 PKG_CHECK_MODULES(FIDO_CMD, [

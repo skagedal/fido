@@ -4,7 +4,10 @@ NULL =
 SUBDIRS =  libgd server client help po
 
 EXTRA_DIST = \
-	COPYING.docs
+	COPYING.docs				\
+	egg-list-box/egg-list-box.h		\
+	egg-list-box/egg-list-box-accessible.h	\
+	egg-list-box/egglistbox.vapi
 
 MAINTAINERCLEANFILES = 		\
 	ABOUT-NLS		\

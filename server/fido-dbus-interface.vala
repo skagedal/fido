@@ -8,7 +8,16 @@ namespace Fido {
         int priority;
         int64 publish_time;
         int64 update_time;
-    }    
+        public FeedSerial () {
+            id = 0;
+            source = "";
+            title = "";
+            priority = 0;
+            publish_time = 0;
+            update_time = 0;
+        }
+    }
+    
     public struct ItemSerial {
         int id;
         int feed_id;
@@ -18,6 +27,17 @@ namespace Fido {
         string author;
         string description;
         int64 publish_time;
+
+        public ItemSerial () {
+            id = 0;
+            feed_id = 0;
+            guid = "";
+            title = "";
+            source = "";
+            author = "";
+            description = "";
+            publish_time = 0;
+        }
     }
 }
 

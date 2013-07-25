@@ -1,3 +1,4 @@
+/* -*- tab-width: 4; indent-tabs-mode: nil; c-basic-offset: 4 -*- */
 /* Adapted from Geary.Logging:
  *
  * Copyright 2011-2013 Yorba Foundation

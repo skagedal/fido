@@ -15,17 +15,29 @@ public class Fido.DBus.FeedStoreImpl : Object, Fido.DBus.FeedStore {
         this.server = server;
     }
 
+    /* 
+     * Serialization helpers.
+     */
+
+    private FeedSerial[] serialize_feeds (Gee.List<Feed> feeds) {
+        var feedlist = new FeedSerial[0]; 
+        foreach (var feed in feeds)
+            feedlist += feed.to_serial();
+        return feedlist;        
+    }
+
     /*
      * Methods dealing with feeds.
      */
 
     public void subscribe (string url) {
-        Logging.message (Flag.SERVER, "Subscribing to %s\n", url);
+        var uri = Fido.Utils.check_uri(url);
+        Logging.message (Flag.SERVER, "Subscribing to %s\n", uri);
         try {
-            var channel = new Grss.FeedChannel.with_source (url);
+            var channel = new Grss.FeedChannel.with_source (uri);
             this.server.database.add_feed (channel);
         } catch (SQLHeavy.Error e) {
-            Logging.critical (Flag.SERVER, @"Subscribing to $(url): $(e.message)");
+            Logging.critical (Flag.SERVER, @"Subscribing to $(uri): $(e.message)");
         }
     }
 
@@ -63,13 +75,6 @@ public class Fido.DBus.FeedStoreImpl : Object, Fido.DBus.FeedStore {
     /*
      * Methods dealing with items.
      */
-
-    private FeedSerial[] serialize_feeds (Gee.List<Feed> feeds) {
-        var feedlist = new FeedSerial[0]; 
-        foreach (var feed in feeds)
-            feedlist += feed.to_serial();
-        return feedlist;        
-    }
 
     public ItemSerial get_current_item () {
         try {

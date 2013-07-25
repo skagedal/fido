@@ -99,16 +99,16 @@ Available commands:
                 
                 case "update":
                     if (args.length > 1 && args[1] == "all")
-                            client.cmd_update_all ();
-                        else {
-                                    stderr.printf ("error: only \"update all\" is supported");
-                                    return 1;
-                        }
-                        break;
+                        client.cmd_update_all ();
+                    else {
+                        stderr.printf (" only \"update all\" is supported\n");
+                        return 1;
+                    }
+                    break;
                         
                 default:
                     stderr.printf ("error: unknown command: %s\n",
-                            args[0]);
+                                   args[0]);
                     return 1;
                 }
             } catch (IOError e) {

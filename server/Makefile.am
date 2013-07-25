@@ -24,7 +24,8 @@ VALA_SOURCES = \
         fido-item.vala                  \
         fido-logging.vala               \
         fido-updater.vala               \
-	main.vala	             \
+        fido-utils.vala			\
+	main.vala			\
 	$(NULL)
 
 fidod_SOURCES = \
