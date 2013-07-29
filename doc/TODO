@@ -1,7 +1,7 @@
-- Fix updater bug
+- Make subscribe tool usable
 - Show publish/update time and author under title header
+- Import OPML
 - Embed grss and sqlheavy as submodules, link to code statically
-- Use versioned database
 - Make updater download images 
 - Make all DBus calls async
 - Subscribing to feed should immediatly schedule update on that feed

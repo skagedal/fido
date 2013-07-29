@@ -9,6 +9,7 @@ namespace Fido {
     public errordomain DatabaseError {
         FILE_NOT_FOUND,
         CREATE_TABLE,
+        INSERT,
         UPDATE,
         SELECT
     }
@@ -22,21 +23,24 @@ namespace Fido {
          *
          * @filename: if null, use in-memory database
          */
-        public Database (string? filename = null) throws DatabaseError, SQLHeavy.Error {
+        public Database (string? filename = null) throws DatabaseError {
+            var schemas = GLib.Path.build_filename (Config.PATH_PACKAGE_DATA,
+                                                    "sqlite-schemas");
+
             if (filename == null)
                 Logging.message (Flag.DATABASE, @"Connecting to SQLite database in memory");
             else
                 Logging.message (Flag.DATABASE, @"Connecting to SQLite database: $filename");
             try {
-                this.db = new SQLHeavy.Database (filename);
+                this.db = new SQLHeavy.VersionedDatabase (filename, schemas);
             } catch (SQLHeavy.Error e) {
                 // This is the "SQL error or missing database" error, which in this
-                // case has to be the latter.
+                // case has to be the latter. (FIXME: Hmm no, we're not checking the error type.)
                 throw new DatabaseError.FILE_NOT_FOUND(@"File not found: $filename");
             }
-            create_tables ();
+            //create_tables ();
         }
-
+/*
         public void create_tables () throws DatabaseError {
             try {
                 this.db.execute ("""
@@ -74,10 +78,10 @@ namespace Fido {
                 throw new DatabaseError.CREATE_TABLE("Error creating table 'feeds'");
             }
         }
-
+*/
 
         /** Update a feed already in database and its items */
-         public void update_feed (Feed feed) throws DatabaseError 
+        public void update_feed (Feed feed) throws DatabaseError 
                 requires (feed.id > 0) 
                 requires (feed.source != null) {
             try {
@@ -100,7 +104,7 @@ namespace Fido {
             }
             foreach (var item in feed.items) 
                 add_or_update_item (feed, item);
-         }
+        }
 
         public void add_or_update_item (Feed feed, Item item) throws DatabaseError
                 requires (feed.id > 0)
@@ -280,14 +284,28 @@ namespace Fido {
 
         }
 
-        public int64 add_feed (string source) throws SQLHeavy.Error {
-            var query = this.db.prepare ("""
-                INSERT INTO `feeds` (
-                    `feed_source`
-                ) VALUES (:source)
-            """);
-            query[":source"] = source;
-            return query.execute_insert ();
+        /** 
+         * Adds a feed to the database.
+         *
+         * @source: The feed's URI
+         *
+         * Return value: Database row ID of the added feed, or 0 if it was already there.
+         */
+        public int64 add_feed (string source) throws DatabaseError {
+            try {
+                var query = this.db.prepare ("""
+                    INSERT INTO `feeds` (
+                        `feed_source`
+                    ) VALUES (:source)
+                """);
+                query[":source"] = source;
+                return query.execute_insert ();
+            } catch (SQLHeavy.Error e) {
+                if (e is SQLHeavy.Error.CONSTRAINT) {
+                    return 0;
+                }
+                throw new DatabaseError.INSERT(@"Error adding feed: $(e.message)");
+            }
         }
 
         // This should be rewritten to use Fido.Feed/Item.

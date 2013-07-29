@@ -85,6 +85,7 @@ help/Makefile
 libgd/Makefile
 po/Makefile.in
 tests/Makefile
+sqlite-schemas/Makefile
 ])
 
 AC_OUTPUT

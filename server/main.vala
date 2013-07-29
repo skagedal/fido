@@ -199,6 +199,8 @@ public class Fido.Server : Object {
     };
 
     public static int main (string args []) {
+        stderr.printf("%s\n", Config.PATH_PACKAGE_DATA);
+    
         var option_ctx = new OptionContext (""" - server for the Fido news reader""");
         option_ctx.add_main_entries (main_options, null);
 

@@ -1,7 +1,7 @@
 ACLOCAL_AMFLAGS = -I m4 -I libgd ${ACLOCAL_FLAGS}
 NULL =
 
-SUBDIRS =  libgd server client help po tests
+SUBDIRS =  libgd server client help po sqlite-schemas tests
 
 EXTRA_DIST = \
 	COPYING.docs				\

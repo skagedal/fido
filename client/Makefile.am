@@ -116,7 +116,7 @@ VALA_FILES_NOTDIR = $(notdir $(VALA_FILES))
 
 MAINTAINERCLEANFILES =	                        \
 	*.stamp			                \
-	$(ALL_VALA_FILES_NOTDIR:.vala=.c)
+	$(VALA_FILES_NOTDIR:.vala=.c)
 
 EXTRA_DIST =                                    \
 	fido.gresource.xml                      \

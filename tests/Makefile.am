@@ -1,5 +1,11 @@
 NULL =
 
+AM_CPPFLAGS = \
+	-DGETTEXT_PACKAGE=\""$(GETTEXT_PACKAGE)"\" 		\
+	-DGNOMELOCALEDIR=\""$(prefix)/$(DATADIRNAME)/locale"\" 	\
+	-DPATH_PACKAGE_DATA='"$(pkgdatadir)"'			\
+	$(NULL)
+
 noinst_PROGRAMS = $(TEST_PROGS)
 
 TEST_PROGS = tests test-webserver
@@ -24,6 +30,7 @@ tests_SOURCES = 				\
 tests_VALAFLAGS = 				\
 	$(VALAFLAGS)				\
 	--vapidir=$(top_builddir)/vapi		\
+	--pkg config				\
 	--pkg gio-2.0		        	\
 	--pkg gee-1.0                   	\
 	--pkg libsoup-2.4               	\
@@ -45,7 +52,7 @@ test_webserver_SOURCES =			\
 
 test_webserver_VALAFLAGS =			\
 	$(VALAFLAGS)				\
-	--pkg libsoup-2.4               	\	
+	--pkg libsoup-2.4               	\
 	$(NULL)
 	
 test_webserver_LDADD = 				\

@@ -3,12 +3,14 @@ NULL =
 AM_CPPFLAGS = \
 	-DGETTEXT_PACKAGE=\""$(GETTEXT_PACKAGE)"\" 		\
 	-DGNOMELOCALEDIR=\""$(prefix)/$(DATADIRNAME)/locale"\" 	\
+	-DPATH_PACKAGE_DATA='"$(pkgdatadir)"'			\
 	$(NULL)
 
 bin_PROGRAMS = fidod
 
 fidod_VALAFLAGS = \
 	--vapidir=$(top_builddir)/vapi	\
+	--pkg config			\
 	--pkg gio-2.0		        \
 	--pkg gee-1.0                   \
 	--pkg libsoup-2.4               \
