@@ -1,16 +1,7 @@
-TODO: 
-
- - GrssFeedsStore documentation should list the overrides
-
-Questions:
-
- - [libgrss] What's the idea - how to add a feed to a feedsstore?  It
-   seems you can only add items?
-
- - [vala] Should I use override? ("public override bool has_item (...)")
-
-g-ir-scan:
-
- - better error reporting:
-   - when command returned non-zero, don't display Python list of command
-   - when --introspect didn't write file, say that, no stack trace
+- Fix updater bug
+- Show publish/update time and author under title header
+- Embed grss and sqlheavy as submodules, link to code statically
+- Use versioned database
+- Make updater download images 
+- Make all DBus calls async
+- Subscribing to feed should immediatly schedule update on that feed

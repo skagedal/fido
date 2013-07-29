@@ -1,7 +1,7 @@
 ACLOCAL_AMFLAGS = -I m4 -I libgd ${ACLOCAL_FLAGS}
 NULL =
 
-SUBDIRS =  libgd server client help po
+SUBDIRS =  libgd server client help po tests
 
 EXTRA_DIST = \
 	COPYING.docs				\

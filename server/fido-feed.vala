@@ -135,7 +135,6 @@ namespace Fido {
                 this.grss = grss_feed;
                 this._items.clear ();
                 foreach (var grss_item in grss_items) {
-                    stdout.printf (" - %s\n", grss_item.get_title ());
                     this._items.add (new Item.from_grss (this, grss_item));
                 }
             } catch (Error e) {

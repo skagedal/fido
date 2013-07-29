@@ -25,6 +25,8 @@ namespace Fido {
 	
 	        var content = get_content_area () as Box;
 	        content.pack_start (this.feedlist, false, true, 0);
+
+            add_button ("_Close", Gtk.ResponseType.CLOSE);
 	        
 	        show_all ();
 	    }

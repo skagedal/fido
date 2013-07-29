@@ -10,7 +10,8 @@ namespace Fido {
             orientation = Gtk.Orientation.HORIZONTAL;
             column_spacing = 12;
             margin = 6;
-
+    
+            // alt: new Gtk.Label (Markup.printf_escaped ("<b>%s</b>", feed.title));
             var escaped = GLib.Markup.escape_text (feed.title, -1);
             var label = new Gtk.Label ("<b>%s</b>".printf (escaped));
             label.use_markup = true;

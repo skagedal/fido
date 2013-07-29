@@ -1,0 +1,27 @@
+<page xmlns="http://projectmallard.org/1.0/"
+      xmlns:its="http://www.w3.org/2005/11/its"
+      type="topic"
+      id="subscribe">
+
+  <info>
+    <link type="guide" xref="index" group="#first"/>
+    <credit type="author copyright">
+      <name>Simon Kågedal Reimer</name>
+      <email its:translate="no">skagedal@gmail.com</email>
+    </credit>
+    <desc>Subscribing to feeds.</desc>
+  </info>
+  
+  <title>Subscribing to feeds</title>
+  <p>The natural place to subscribe to a news feed is through your web browser, when you're viewing the page you want to subscribe to.</p>
+  
+  <section id="firefox">
+    <title>Using Firefox</title>
+<p>In the Bookmarks menu there is an entry called "Subscribe to This Page". This entry will be disabled when there is no feeds available for the current page.  When the page has exactly one associated feed, clicking the menu entry leads to that feed. When there are several associated feeds, a submenu lets you choose between them.  This can sometimes be a useful choice between, for example, a feed of the main entries of a blog or a feed of comments.  Often it is a choice between different feed formats, RSS and Atom.  It often doesn't matter which one of these you pick.</p>
+
+<p>When on the feed page, you can subscribe to it with Fido. In the selection box after the text "Subscribe to this feed using", pick "Choose Application...". You now need to find the program <cmd>fido-subscribe</cmd>.  It will usually be in <sys>/usr/local/bin</sys> or <sys>/usr/bin</sys>. </p> 
+  </section>
+
+
+</page>
+

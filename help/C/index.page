@@ -1,0 +1,21 @@
+<page xmlns="http://projectmallard.org/1.0/"
+      xmlns:its="http://www.w3.org/2005/11/its"
+      type="guide" style="task"
+      id="index">
+
+  <info>
+    <revision pkgversion="0.1" date="2013-07-28" status="final"/>
+
+    <credit type="author copyright">
+      <name>Simon Kågedal Reimer</name>
+      <email its:translate="no">skagedal@gmail.com</email>
+    </credit>
+
+    <desc><app>Fido News Reader</app>, a news reader for RSS and Atom feeds.</desc>
+  </info>
+  
+  <title>Fido News Reader</title>
+  <p><app>Fido News Reader</app>, or just <app>Fido</app>, is a minimalistic news reader.</p>
+
+</page>
+  

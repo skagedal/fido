@@ -107,9 +107,16 @@ AM_CFLAGS = \
 	-Wno-unused-variable		        \
 	$(NULL)
 
+VALA_FILES =					\
+	$(FIDO_SUBSCRIBE_VALA_SOURCES)		\
+	$(FIDO_CMD_VALA_SOURCES)		\
+	$(FIDO_VALA_SOURCES)
+
+VALA_FILES_NOTDIR = $(notdir $(VALA_FILES))
+
 MAINTAINERCLEANFILES =	                        \
 	*.stamp			                \
-	$(VALA_SOURCES:.vala=.c)
+	$(ALL_VALA_FILES_NOTDIR:.vala=.c)
 
 EXTRA_DIST =                                    \
 	fido.gresource.xml                      \

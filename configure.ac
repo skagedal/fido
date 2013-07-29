@@ -9,6 +9,7 @@ AC_INIT([fido],
 AC_CONFIG_HEADERS(config.h)
 AC_CONFIG_SRCDIR(server/main.vala)
 AC_CONFIG_SRCDIR(client/fido-main.vala)
+AC_CONFIG_SRCDIR(tests/test-main.vala)
 AC_CONFIG_MACRO_DIR([m4])
 
 AC_CANONICAL_TARGET
@@ -83,6 +84,7 @@ client/Makefile
 help/Makefile
 libgd/Makefile
 po/Makefile.in
+tests/Makefile
 ])
 
 AC_OUTPUT

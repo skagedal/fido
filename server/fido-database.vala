@@ -255,7 +255,7 @@ namespace Fido {
          * @id: item row id
          * @time: if 0, set to current time
          */
-        public void set_item_read_time (int id, int64 time) throws DatabaseError {
+        public void set_item_read_time (int id, int64 time = 0) throws DatabaseError {
             string timestring;
             if (time == 0)
                 timestring = "(strftime('%s'))";
@@ -280,8 +280,17 @@ namespace Fido {
 
         }
 
-        // The following methods should be rewritten to use Fido.Feed/Item.
+        public int64 add_feed (string source) throws SQLHeavy.Error {
+            var query = this.db.prepare ("""
+                INSERT INTO `feeds` (
+                    `feed_source`
+                ) VALUES (:source)
+            """);
+            query[":source"] = source;
+            return query.execute_insert ();
+        }
 
+        // This should be rewritten to use Fido.Feed/Item.
         public int64 add_item (Grss.FeedItem item) throws SQLHeavy.Error {
             var feed_id = item.get_parent().get_data<int64> ("sqlid");
             var id = this.db.execute_insert ("""
@@ -303,16 +312,5 @@ namespace Fido {
             return id;
          }
 
-        public int64 add_feed (Grss.FeedChannel channel) throws SQLHeavy.Error {
-            var id = this.db.execute_insert ("""
-                INSERT INTO `feeds` (
-                    feed_title,
-                    feed_source
-                ) VALUES (:title, :source)""",
-                                             ":title", typeof(string), channel.get_title(),
-                                             ":source", typeof(string), channel.get_source());
-            channel.set_data<int64> ("sqlid", id);
-            return id;
-        }
     }
 }

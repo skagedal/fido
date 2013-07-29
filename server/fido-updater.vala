@@ -31,9 +31,13 @@ namespace Fido {
         // Since passing things in closure doesn't work, I prefer to not use 
         // anonymous delegate function to make clear what the scope is.
 
-        public static void handle_update (Soup.SessionAsync session,
+        public static void handle_update_static (Soup.SessionAsync session,
                           Soup.Message m) {
             Updater updater = session.get_data<Updater> ("fido-updater");
+            updater.handle_update (session, m);
+        }
+
+        public void handle_update (Soup.SessionAsync session, Soup.Message m) {
             string uri = m.uri.to_string (false);
             Logging.message (Flag.UPDATER, 
                              @"GET $(uri): $(m.status_code) $(m.reason_phrase)");
@@ -42,10 +46,10 @@ namespace Fido {
                 string body = (string) m.response_body.data;
                 Logging.message (Flag.UPDATER, "Parsing string beginning with %s", body[0:20]);
                 Logging.message (Flag.UPDATER, @"($(m.response_body.length) bytes)");
-                if (updater.running_jobs.has_key (uri)) {
-                    var feed = updater.running_jobs[uri];
-                    stdout.printf ("Feed source: %s\n", feed.source);
-                    updater.update_feed (feed, body);
+                if (running_jobs.has_key (uri)) {
+                    var feed = running_jobs[uri];
+                    update_feed (feed, body);
+                    running_jobs.unset (uri);
                 } else {
                     Logging.warning (Flag.UPDATER, "Got response on an URL not in running jobs");
                 }
@@ -53,6 +57,10 @@ namespace Fido {
                 Logging.warning (Flag.UPDATER, @"Got response $(m.status_code) $(m.reason_phrase) on $(uri)");
             }
 
+            work_on_queue ();
+            
+            if (running_jobs.is_empty && jobs_to_run.is_empty) 
+                notify_wait_for_empty ();
         }
 
         public void update_feed (Feed feed, string body) {
@@ -72,7 +80,7 @@ namespace Fido {
                 var feed = jobs_to_run.poll ();
                 Logging.debug (Flag.UPDATER, "Starting download of %s\n", feed.source);
                 var msg = new Soup.Message ("GET", feed.source);
-                session.queue_message (msg, (Soup.SessionCallback) handle_update);
+                session.queue_message (msg, (Soup.SessionCallback) handle_update_static);
                 running_jobs[feed.source] = feed;
             }
         }
@@ -101,6 +109,29 @@ namespace Fido {
             } catch (DatabaseError e) {
                 Logging.critical (Flag.UPDATER, 
                                   "Database error: %s", e.message);
+            }
+        }
+        
+        private void notify_wait_for_empty () {
+            if (wait_loop != null) {
+                wait_loop.quit ();
+                wait_loop = null;
+            }
+        }
+        
+        private MainLoop wait_loop = null;
+        
+        /** 
+         * Wait for all updates to finish. Intended to be used from unit test.
+         */
+        public void sync () {
+            while (!running_jobs.is_empty || !jobs_to_run.is_empty) {
+                if (wait_loop != null) {
+                    Logging.critical (Flag.UPDATER, "Can't sync recursively.");
+                    return;
+                }
+                wait_loop = new MainLoop ();
+                wait_loop.run ();
             }
         }
     }

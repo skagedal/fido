@@ -22,6 +22,21 @@ namespace Fido {
             }
         }
 
+        protected void cmd_discover (string[] args) throws IOError {
+            if (args.length != 1) {
+                stderr.printf ("bad discover command\n");
+                return;
+            }
+            var loop = new MainLoop ();
+            server.discover.begin (args [0], (obj, res) => {
+                FeedSerial[] feeds = server.discover.end (res);
+                foreach (var feed in feeds) 
+                    stdout.printf ("%s [%s]\n", feed.title, feed.source);
+                loop.quit ();
+            });
+            loop.run();
+        }
+
         protected void cmd_subscribe (string[] args) throws IOError {
             if (args.length == 1)
                 server.subscribe (args [0]);
@@ -85,6 +100,10 @@ Available commands:
 
             try {
                 switch (args[0]) {
+                case "discover":
+                    client.cmd_discover (args[1:args.length]);
+                    break;
+
                 case "subscribe":
                     client.cmd_subscribe (args[1:args.length]);
                     break;

@@ -3,7 +3,7 @@
 using Fido.Logging;
 
 [DBus (name = "org.gitorious.Fido.FeedStore")] // Should we have timeout = 120000 as Geary does?
-public class Fido.DBus.FeedStoreImpl : Object, Fido.DBus.FeedStore {
+public class Fido.DBus.FeedStoreImpl : Object /*, Fido.DBus.FeedStore */ {
     public static const string INTERFACE_NAME = "org.gitorious.Fido.FeedStore";
 
     private Fido.Server server;
@@ -30,12 +30,22 @@ public class Fido.DBus.FeedStoreImpl : Object, Fido.DBus.FeedStore {
      * Methods dealing with feeds.
      */
 
+    public async FeedSerial[] discover (string url) {
+        var feeds = new FeedSerial[0]; 
+        var feed = FeedSerial();
+        Idle.add (discover.callback);
+        yield;
+        feed.title = "Foo";
+        feed.source = "http://foo.org/";
+        feeds += feed;
+        return feeds;
+    }
+
     public void subscribe (string url) {
         var uri = Fido.Utils.check_uri(url);
-        Logging.message (Flag.SERVER, "Subscribing to %s\n", uri);
+        Logging.message (Flag.SERVER, "Subscribing to %s", uri);
         try {
-            var channel = new Grss.FeedChannel.with_source (uri);
-            this.server.database.add_feed (channel);
+            this.server.database.add_feed (uri);
         } catch (SQLHeavy.Error e) {
             Logging.critical (Flag.SERVER, @"Subscribing to $(uri): $(e.message)");
         }
@@ -138,11 +148,17 @@ public class Fido.Server : Object {
         this._updater = new Updater (this._database);
 
         var timeout = new TimeoutSource.seconds (300);
-        timeout.set_callback(() => { 
-                _updater.check_for_updates (); 
-                return true;
-            });
+        timeout.set_callback(() => {
+            this._updater.check_for_updates ();
+            return true;    
+        });
         timeout.attach (this.mainloop.get_context ());
+        
+        // Schedule a single update
+        Idle.add (() => {
+            this._updater.check_for_updates ();
+            return false;
+        });
     }
 
     public Fido.Database database { get { return this._database; } }

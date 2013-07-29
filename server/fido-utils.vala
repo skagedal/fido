@@ -10,4 +10,108 @@ namespace Fido.Utils {
         return s;
     }
 
+    class LinkParser : Object {
+        private const MarkupParser parser = {
+            visit_start, null, null, null, null
+        };
+    	private MarkupParseContext context;
+    	public string rel = null;
+    	public string type = null;
+    	public string href = null;
+    	public string title = null;
+        public bool link_found = false;
+    	public LinkParser () {
+    		context = new MarkupParseContext (parser, 0, this, null);
+    	}
+    	public bool parse (string s, out string? rel, out string? type, out string? href, out string? title) {
+            try {
+                if (context.parse (s, -1) && this.link_found) {
+                    rel = this.rel;
+                    type = this.type;
+                    href = this.href;
+                    title = this.title;
+                    return true;
+                }
+            } catch (MarkupError e) { }
+            rel = type = href = title = null;
+            return false;
+        }
+
+    	private void visit_start (MarkupParseContext context, string name, string[] attr_names, string[] attr_values) throws MarkupError {
+    	    if (name.down() == "link") {
+    	        this.link_found = true;
+                for (int i = 0; attr_names [i] != null; i++) {
+                    switch (attr_names [i].down()) {
+                    case "href":
+                        this.href = attr_values [i];
+                        break;
+                        
+                    case "rel":
+                        this.rel = attr_values [i];
+                        break;
+                        
+                    case "type":
+                        this.type = attr_values [i];
+                        break;
+                        
+                    case "title":
+                        this.title = attr_values [i];
+                        break;
+                    }
+                }
+    	    }
+        }
+    }
+
+    public class Link : Object {
+        public string? rel { get; private set; }
+        public string? type_ { get; private set; } // property called "type" is not allowed
+        public string? href { get; private set; }
+        public string? title { get; private set; }
+        public Link (string? rel_, string? type__, string? href_, string? title_) {
+            rel = rel_;
+            type_ = type__;
+            href = href_;
+            title = title_;
+        }
+    }
+
+    /**
+     * Get some common attributes from a single link tag 
+     * 
+     * @markup: String containing a <link> tag.
+     * 
+     * Return value: Link if successful, null otherwise
+     */
+    public Link? parse_link (string markup) {
+        var parser = new LinkParser();
+        string rel, type, href, title;
+        if (parser.parse (markup, out rel, out type, out href, out title)) 
+            return new Link (rel, type, href, title);
+        else 
+            return null;
+    }
+    
+    public List<Link> find_links (string markup) {
+        List<Link> links = null;
+        Regex regex;
+        try {
+            regex = new Regex ("<link[^>]*>", RegexCompileFlags.CASELESS);
+        } catch (RegexError e) {
+            error (e.message);
+        }
+        MatchInfo match = null;
+        regex.match (markup, 0, out match);
+        while (match.matches ()) {
+            Link link = parse_link (match.fetch (0));
+            if (link != null)
+                links.append (link);
+            try {
+                match.next ();
+            } catch (RegexError e) {
+                error (e.message);
+            }
+        }
+        return links;
+    }
 }

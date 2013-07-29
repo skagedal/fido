@@ -48,6 +48,7 @@ namespace Fido.DBus {
         public abstract void mark_item_as_read (int id) throws IOError;
         public abstract void set_item_priority_relative (int id, int diff) throws IOError;
         
+        public abstract async FeedSerial[] discover (string url) throws IOError;
         public abstract void subscribe (string url) throws IOError;
         public abstract void unsubscribe (int id) throws IOError;
         public abstract FeedSerial[] get_feeds () throws IOError;
