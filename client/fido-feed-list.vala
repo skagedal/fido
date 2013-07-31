@@ -17,9 +17,11 @@ namespace Fido {
             }
         }
 
+        public signal void feed_picked (Feed feed);
+
         public override void child_activated (Gtk.Widget? widget) {
             var feedwidget = widget as FeedListWidget;
-            stdout.printf("Activated: %s\n", feedwidget.feed.title);
+            feed_picked (feedwidget.feed);
         }
 
         public void update () {

@@ -10,10 +10,29 @@ using Fido.Logging;
 
 namespace Fido {
 
+    public errordomain ParseError {
+        PARSE    
+    }
+
     public class Feed : Object {
         private Grss.FeedChannel grss;
 
         public Gee.Set<Item> items { get; private set; }
+
+        public Feed (string? source = null)  {
+            if (source != null)
+                grss = new Grss.FeedChannel.with_source (source);
+            else 
+                grss = new Grss.FeedChannel ();
+                
+            _items = new Gee.HashSet<Item> ();
+
+        }
+        public Feed.with_content (string? source, string content) throws ParseError {
+            this (source);
+
+            parse (content);
+        }
         
         public Feed.with_id (int id) {
             this._id = id;
@@ -125,8 +144,7 @@ namespace Fido {
             public unowned GLib.List<string> get_contributors ();
         */
 
-
-        public void parse (string body) {
+        public void parse (string body) throws ParseError {
             try {
                 var grss_feed = new Grss.FeedChannel.with_source (this.source);
                 var parser = new Grss.FeedParser ();
@@ -138,7 +156,7 @@ namespace Fido {
                     this._items.add (new Item.from_grss (this, grss_item));
                 }
             } catch (Error e) {
-                Logging.warning (Flag.UPDATER, "Parse error: %s", e.message);
+                throw new ParseError.PARSE (e.message);
             }        
         }
 

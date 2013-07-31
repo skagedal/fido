@@ -41,8 +41,6 @@ namespace Fido {
             
             // Not sure if this or DOCUMENT_BROWSER is best
             WebKit.set_cache_model (WebKit.CacheModel.DOCUMENT_VIEWER);
-            
-            stderr.printf ("Starting..\n");
         }
 
         protected override void activate () {

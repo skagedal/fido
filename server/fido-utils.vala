@@ -81,7 +81,7 @@ namespace Fido.Utils {
      * 
      * @markup: String containing a <link> tag.
      * 
-     * Return value: Link if successful, null otherwise
+     * Return value: A #Link if successful, null otherwise
      */
     public Link? parse_link (string markup) {
         var parser = new LinkParser();
@@ -92,6 +92,16 @@ namespace Fido.Utils {
             return null;
     }
     
+    /**
+     * Find all <link> tags in a string of html and parse some common
+     * attributes from them.  This just uses a simple regular expression,
+     * which means that there could be false positives.  Using a proper
+     * parser might be better.
+     * 
+     * @markup: String to look for <link> tags in
+     *
+     * Return value: A list of #Link:s, or null if no links found.
+     */
     public List<Link> find_links (string markup) {
         List<Link> links = null;
         Regex regex;
@@ -113,5 +123,50 @@ namespace Fido.Utils {
             }
         }
         return links;
+    }
+    
+    /**
+     * Find all <link> tags in a string of html that have links to RSS and
+     * Atom feeds, and make Feed objects of them.
+     *
+     * @markup: String to look for <link> tags in
+     *
+     * Return value: A list of #Feed:s, or null if no links found.
+     *
+     */
+    public Gee.List<Feed> find_feeds (string markup) {
+        List<Link> links = find_links (markup);
+        Gee.List<Feed> feeds = null;
+        
+        foreach (var link in links) {
+            if ((link.type_ == "application/rss+xml" || 
+                 link.type_ == "application/atom+xml") &&
+                link.href != null) 
+            {
+                var feed = new Feed (link.href);
+                feed.title = link.title;
+
+                feeds.add (feed);
+            }
+        }
+        return feeds;
+    }
+    
+    /**
+     * Check if a string is a feed in a known format.
+     * 
+     * @markup: String to check.
+     *
+     * Return value: true if @markup parses as a feed.
+     */
+    public bool is_feed (string markup) {
+        try {
+            var grss_feed = new Grss.FeedChannel ();
+            var parser = new Grss.FeedParser ();
+            var grss_items = parser.parse_from_string (grss_feed, markup);
+        } catch (Error e) {
+            return false;
+        }
+        return true;
     }
 }

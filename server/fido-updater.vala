@@ -7,7 +7,7 @@ namespace Fido {
     public class Updater : Object {
 
         // How often, in seconds, each feed should be updated.
-        public static const int UPDATE_INTERVAL = 600; 
+        public static const int UPDATE_INTERVAL = 60 * 60 * 24; 
 
         // How many download jobs we can have simultaneously
         public static const int MAX_JOBS = 5;
@@ -71,9 +71,11 @@ namespace Fido {
             } catch (DatabaseError e) {
                 Logging.critical (Flag.UPDATER, 
                                   "Database error: %s", e.message);
+            } catch (ParseError e) {
+                Logging.critical (Flag.UPDATER,
+                                  "Parse error: %s", e.message);
             }
         }
-
 
         public void work_on_queue () {
             while (jobs_to_run.size > 0 && running_jobs.size < MAX_JOBS) {
@@ -110,6 +112,39 @@ namespace Fido {
                 Logging.critical (Flag.UPDATER, 
                                   "Database error: %s", e.message);
             }
+        }
+        
+        public async Gee.List<Feed> discover_async (string uri) {
+            var msg = new Soup.Message ("GET", uri);
+            session.queue_message (msg, (s, m) => {
+                Idle.add(discover_async.callback);
+            });
+            yield;
+            
+            Logging.message (Flag.UPDATER, 
+                             @"discover: GET $(uri): $(msg.status_code) $(msg.reason_phrase)");
+
+            if (msg.status_code != 200) {
+                Logging.warning (Flag.UPDATER, @"discover: Got response $(msg.status_code) $(msg.reason_phrase) on $(uri)");
+                // FIXME: the HTTP status should somehow be forwarded to the client, possibly through exception
+                return new Gee.LinkedList<Feed> ();            // empty list
+            }
+
+            // FIXME: Not safe, we need to check content-type and encoding
+            string body = (string) msg.response_body.data;
+            // Logging.message (Flag.UPDATER, "discover: Parsing string beginning with %s", body[0:20]);
+
+            // First, try to parse the content as a feed
+
+            try {
+                var feed = new Feed.with_content (uri, body);
+                Gee.List<Feed> feeds = new Gee.LinkedList<Feed> ();
+                feeds.add (feed);
+                return feeds;
+            } catch (ParseError e) { }
+            
+            // Otherwise, try to find <link> tags 
+            return Utils.find_feeds (body);
         }
         
         private void notify_wait_for_empty () {

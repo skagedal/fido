@@ -1,7 +1,16 @@
-- Make subscribe tool usable
-- Show publish/update time and author under title header
+- Show some basic info of each feed item under title header:
+  - publish/update time
+  - author under title header
+  - feed name (possibly in action bar)
+- Subscribing to feed should immediatly schedule update on that feed
+- Fix autodiscovery
+- Remove user interface for unimplemented stuff
+- Start DBus server automatically
+  - http://raphael.slinckx.net/blog/documents/dbus-tutorial
+  - http://www.freedesktop.org/wiki/IntroductionToDBus/ (search for Activation)
+  - http://dbus.freedesktop.org/doc/system-activation.txt
 - Import OPML
 - Embed grss and sqlheavy as submodules, link to code statically
 - Make updater download images 
 - Make all DBus calls async
-- Subscribing to feed should immediatly schedule update on that feed
+

@@ -19,10 +19,12 @@ public class Fido.DBus.FeedStoreImpl : Object /*, Fido.DBus.FeedStore */ {
      * Serialization helpers.
      */
 
-    private FeedSerial[] serialize_feeds (Gee.List<Feed> feeds) {
+    private FeedSerial[] serialize_feeds (Gee.List<Feed>? feeds) {
         var feedlist = new FeedSerial[0]; 
-        foreach (var feed in feeds)
-            feedlist += feed.to_serial();
+        if (feeds != null) {
+            foreach (var feed in feeds)
+                feedlist += feed.to_serial();
+        }
         return feedlist;        
     }
 
@@ -31,14 +33,9 @@ public class Fido.DBus.FeedStoreImpl : Object /*, Fido.DBus.FeedStore */ {
      */
 
     public async FeedSerial[] discover (string url) {
-        var feeds = new FeedSerial[0]; 
-        var feed = FeedSerial();
-        Idle.add (discover.callback);
-        yield;
-        feed.title = "Foo";
-        feed.source = "http://foo.org/";
-        feeds += feed;
-        return feeds;
+        var uri = Fido.Utils.check_uri(url);
+        var feeds = yield server.updater.discover_async (uri);
+        return serialize_feeds (feeds);
     }
 
     public void subscribe (string url) {
@@ -46,7 +43,7 @@ public class Fido.DBus.FeedStoreImpl : Object /*, Fido.DBus.FeedStore */ {
         Logging.message (Flag.SERVER, "Subscribing to %s", uri);
         try {
             this.server.database.add_feed (uri);
-        } catch (SQLHeavy.Error e) {
+        } catch (DatabaseError e) {
             Logging.critical (Flag.SERVER, @"Subscribing to $(uri): $(e.message)");
         }
     }
