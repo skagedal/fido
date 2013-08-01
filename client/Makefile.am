@@ -68,12 +68,19 @@ fido_subscribe_LDADD =                                 	\
 
 # fido
 
+# It's a bit unsatisfying that we have to include libgrss and its dependencies
+# because of how Fido.Feed and Fido.Item are implemented.  We'll fix that
+# later.
+
 fido_VALAFLAGS = \
 	--vapidir=$(top_builddir)/libgd			\
 	--vapidir=$(top_builddir)/egg-list-box		\
 	--vapidir=$(top_builddir)/vapi			\
 	--pkg gtk+-3.0					\
 	--pkg gio-2.0					\
+	--pkg libgrss-0.5               		\
+	--pkg libsoup-2.4               		\
+	--pkg libxml2-2.0               		\
 	--pkg gd-1.0					\
 	--pkg webkitgtk-3.0				\
 	--pkg gee-1.0					\
@@ -83,6 +90,9 @@ fido_VALAFLAGS = \
 
 FIDO_VALA_SOURCES = \
         $(top_srcdir)/server/fido-dbus-interface.vala   \
+        $(top_srcdir)/server/fido-feed.vala   		\
+        $(top_srcdir)/server/fido-item.vala   		\
+        $(top_srcdir)/server/fido-logging.vala   	\
 	fido-application.vala		                \
 	fido-window.vala                                \
 	fido-main.vala			                \

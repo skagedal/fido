@@ -8,6 +8,7 @@ namespace Fido {
         int priority;
         int64 publish_time;
         int64 update_time;
+        
         public FeedSerial () {
             id = 0;
             source = "";
@@ -20,23 +21,25 @@ namespace Fido {
     
     public struct ItemSerial {
         int id;
-        int feed_id;
         string guid;
         string title;
         string source;
         string author;
         string description;
         int64 publish_time;
+        // Every time we send an item over DBus we also send it's entire feed info.
+        // Not very efficient maybe but will do for now.
+        FeedSerial feed;
 
         public ItemSerial () {
             id = 0;
-            feed_id = 0;
             guid = "";
             title = "";
             source = "";
             author = "";
             description = "";
             publish_time = 0;
+            feed = FeedSerial ();
         }
     }
 }

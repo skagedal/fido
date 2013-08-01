@@ -17,7 +17,8 @@ public class Item : Object {
     
     public Item.from_serial (ItemSerial item) {
         this.id = item.id;
-        // FIXME this._parent = find parent with id item.feed_id;
+        this._parent = new Feed.from_serial (item.feed);
+        this.grss = new Grss.FeedItem (_parent.grss_feed);
         this.guid = item.guid;
         this.title = item.title;
         this.source = item.source;
@@ -29,13 +30,13 @@ public class Item : Object {
     public ItemSerial to_serial() {
         var item = ItemSerial();
         item.id = this.id;
-        item.feed_id = this._parent.id;
         item.guid = this.grss.get_id() ?? ""; // we don't send fake guids
         item.title = this.title ?? "";
         item.source = this.source ?? "";
         item.author = this.author ?? "";
         item.description = this.description ?? "";
         item.publish_time = this.publish_time;
+        item.feed = this._parent.to_serial ();
         return item;
     }
     public Feed parent { get; private set; }

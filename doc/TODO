@@ -3,7 +3,8 @@
   - author under title header
   - feed name (possibly in action bar)
 - Subscribing to feed should immediatly schedule update on that feed
-- Fix autodiscovery
+- Fix autodiscovery of feeds
+- Links should open in browser
 - Remove user interface for unimplemented stuff
 - Start DBus server automatically
   - http://raphael.slinckx.net/blog/documents/dbus-tutorial
