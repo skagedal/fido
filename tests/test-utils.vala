@@ -11,9 +11,11 @@ class TestUtils : Gee.TestCase {
     }
  
     public override void set_up () {
-        // setup your test
     }
  
+    public override void tear_down () {
+    }
+
     public void test_parse_link() {
         Fido.Utils.Link? link;
 
@@ -80,7 +82,4 @@ class TestUtils : Gee.TestCase {
         
     }
  
-    public override void tear_down () {
-        // tear down your test
-    }
 }

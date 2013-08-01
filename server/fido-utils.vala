@@ -136,10 +136,11 @@ namespace Fido.Utils {
      */
     public Gee.List<Feed> find_feeds (string markup) {
         List<Link> links = find_links (markup);
-        Gee.List<Feed> feeds = null;
+        Gee.List<Feed> feeds = new Gee.LinkedList<Feed> ();
         
         foreach (var link in links) {
-            if ((link.type_ == "application/rss+xml" || 
+            if (link.rel == "alternate" &&
+                (link.type_ == "application/rss+xml" || 
                  link.type_ == "application/atom+xml") &&
                 link.href != null) 
             {

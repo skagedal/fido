@@ -73,6 +73,49 @@ namespace Fido {
             return box;
         }
         
+        private WebView create_item_view () {
+            WebView view = new WebView ();
+            view.navigation_policy_decision_requested.connect ((frame, network_request, action, decision) => {
+                switch (action.get_reason ()) {
+                case WebNavigationReason.LINK_CLICKED:
+                    stdout.printf ("Navigation reason: Link clicked - showing\n");
+                    try {
+                        Gtk.show_uri (null, network_request.get_uri (), Gdk.CURRENT_TIME);
+                    } catch (Error e) {
+                        warning (e.message);
+                    }
+                    return true;
+                    
+                case WebNavigationReason.FORM_SUBMITTED:
+                    stdout.printf ("Navigation reason: Form submitted\n");
+                    break;
+                case WebNavigationReason.BACK_FORWARD:
+                    stdout.printf ("Navigation reason: Back/Forward\n");
+                    break;
+                case WebNavigationReason.RELOAD:
+                    stdout.printf ("Navigation reason: Reload\n");
+                    break;
+                case WebNavigationReason.FORM_RESUBMITTED:
+                    stdout.printf ("Navigation reason: Form resubmitted\n");
+                    break;
+                case WebNavigationReason.OTHER:
+                    stdout.printf ("Navigation reason: Other\n");
+                    stdout.printf ("Deciding policy on %s: use\n", network_request.get_uri ());
+                    decision.use ();
+                    return true;
+
+                default:
+                    stdout.printf ("Navigation reason: UNKNOWN\n");
+                    break;
+                }
+                stdout.printf ("Deciding policy on %s: ignore\n", network_request.get_uri ());
+                decision.ignore ();
+                return true;
+            });
+            
+            return view;
+        }
+        
         static const string item_template = """
 <html>
   <head>
@@ -147,7 +190,7 @@ namespace Fido {
             */
 
             var scrolledwindow = new Gtk.ScrolledWindow (null, null);
-            item_view = new WebView ();
+            item_view = create_item_view ();
             scrolledwindow.add(item_view);
             load_current_item ();
             

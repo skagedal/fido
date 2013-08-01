@@ -138,10 +138,19 @@ namespace Fido {
 
             try {
                 var feed = new Feed.with_content (uri, body);
+                // We need to re-set the source after parsing, since we otherwise get <link rel="self">
+                // uri:s. I think it makes more sense to use the one the user is explicitly requesting.
+                // Not 100 % sure though.
+                // (Also there's a bug in libgrss that causes an item's rel="self" to be stored there,
+                // but we can fix that.)
+                feed.source = uri;
                 Gee.List<Feed> feeds = new Gee.LinkedList<Feed> ();
+                Logging.message (Flag.UPDATER, @"discover: returning feed with source $(feed.source)");
                 feeds.add (feed);
                 return feeds;
-            } catch (ParseError e) { }
+            } catch (ParseError e) { 
+                Logging.message (Flag.UPDATER, @"discover: parse error as feed: $(e.message)");
+            }
             
             // Otherwise, try to find <link> tags 
             return Utils.find_feeds (body);

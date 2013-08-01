@@ -4,7 +4,8 @@ public static int main(string[] args) {
     Test.init (ref args);
 
     var root = TestSuite.get_root ();
-    root.add_suite(new TestUtils().get_suite());
-    root.add_suite(new TestUpdater().get_suite());
+    root.add_suite(new TestUtils ().get_suite ());
+    root.add_suite(new TestUpdater ().get_suite ());
+    root.add_suite(new TestFeed ().get_suite ());
     return Test.run ();
 }
