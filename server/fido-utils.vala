@@ -152,21 +152,4 @@ namespace Fido.Utils {
         return feeds;
     }
     
-    /**
-     * Check if a string is a feed in a known format.
-     * 
-     * @markup: String to check.
-     *
-     * Return value: true if @markup parses as a feed.
-     */
-    public bool is_feed (string markup) {
-        try {
-            var grss_feed = new Grss.FeedChannel ();
-            var parser = new Grss.FeedParser ();
-            var grss_items = parser.parse_from_string (grss_feed, markup);
-        } catch (Error e) {
-            return false;
-        }
-        return true;
-    }
 }

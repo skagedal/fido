@@ -90,6 +90,10 @@ public class Item : Object {
         get { return (int64) grss.get_publish_time (); }
         set { grss.set_publish_time ((long) value); }
     }
+    public DateTime publish_datetime {
+        owned get { return new DateTime.from_unix_utc ((int64) grss.get_publish_time ()); }
+        set { grss.set_publish_time ((long) value.to_unix ()); }
+    }
 
     // grss to possibly wrap:
 /*

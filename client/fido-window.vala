@@ -73,9 +73,54 @@ namespace Fido {
             return box;
         }
         
+        static const string item_template = """
+<html>
+  <head>
+  </head>
+  <body>
+    <div class="info">{{feed_title_link}} &#x2022; {{author_link}} &#x2022; {{update_time}}</div>
+    <h1>{{item_title}}</h1>
+    {{item_description}}
+  </body>
+</html>
+        """;
+        static Regex template_regex = null;
+        public string get_content_from_template () {
+            if (template_regex == null) {
+                try {
+                    template_regex = new Regex ("""\{\{([a-z_]+)\}\}""", 0, 0);
+                } catch (RegexError e) {
+                    error (e.message);
+                }
+            }
+            return template_regex.replace_eval (item_template, -1, 0, 0, (match, result) => {
+                switch (match.fetch (1)) {
+                    case "feed_title_link":
+                        result.append (current_item.parent.title);
+                        break;
+                    case "author_link":
+                        result.append (current_item.author);
+                        break;
+                    case "update_time":
+                        result.append (current_item.publish_datetime.format ("%c"));
+                        break;
+                    case "item_title":
+                        result.append (current_item.title);
+                        break;
+                    case "item_description":
+                        result.append (current_item.description);
+                        break;
+                    default:
+                        result.append (match.fetch (0));
+                        break;
+                }
+                return false;
+            });
+        }
+        
         public void update_content () {
-            string s = @"<h1>$(current_item.title)</h1>$(current_item.description)";
-            item_view.load_string (s, "text/html", "utf-8", "");
+            item_view.load_string (get_content_from_template (), 
+                                   "text/html", "utf-8", "");
         }
         
         public void load_current_item () {
