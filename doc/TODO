@@ -1,8 +1,4 @@
-- Lilla Hörnan gets the wrong publish time for items
-- Show some basic info of each feed item under title header:
-  - title should be linked to item uri
-  - author under title header (done, but does it work?)
-  - feed name (possibly in action bar) (done, but does it work?)
+- Item title should be linked to item uri
 - Subscribing to feed should immediatly schedule update on that feed
 - Links should open in browser (done, but sometimes it doesn't work?)
 - Start DBus server automatically
@@ -11,9 +7,15 @@
   - http://dbus.freedesktop.org/doc/system-activation.txt
 - Import OPML
 - Embed grss and sqlheavy as submodules, link to code statically
+- Make sqlheavy's VersionedDatabase use GResources
 - Make updater download images 
 - Make all DBus calls async
 - Get rid of context menu in webview, it doesn't make sense
 - Say "no more items" after last item
 - "Help" and "About" in App menu
-
+- Create icon and desktop file 
+  - https://developer.gnome.org/gtk3/3.9/ch01s05.html
+- Use WebkitGtk2 
+- Move autodiscover code to libgrss?
+- View Flash content
+- View previous item...

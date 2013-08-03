@@ -40,45 +40,6 @@ namespace Fido {
             }
             //create_tables ();
         }
-/*
-        public void create_tables () throws DatabaseError {
-            try {
-                this.db.execute ("""
-                    CREATE TABLE IF NOT EXISTS `items` (
-                        item_id                  INTEGER PRIMARY KEY,
-                        item_guid                TEXT NOT NULL,
-                        item_title               TEXT,
-                        item_content             TEXT,
-                        item_posted              INTEGER,
-                        item_updated             INTEGER,
-                        item_read_time           INTEGER DEFAULT 0,
-                        item_mute                INTEGER,
-                        item_stored              INTEGER DEFAULT (strftime('%s')),
-                        feed_id                  INTEGER NOT NULL,
-                        
-                        UNIQUE (feed_id, item_guid)
-                    )
-                """);
-            } catch (SQLHeavy.Error e) {
-                throw new DatabaseError.CREATE_TABLE(@"Error creating table 'items': $(e.message)");
-            }
-            try {
-                this.db.execute ("""
-                    CREATE TABLE IF NOT EXISTS `feeds` (
-                        feed_id                  INTEGER PRIMARY KEY,
-                        feed_title               TEXT,
-                        feed_source              TEXT UNIQUE NOT NULL,
-                        feed_metadata            TEXT,
-                        feed_priority            INTEGER DEFAULT 0,
-                        feed_mute                INTEGER,
-                        feed_updated             INTEGER DEFAULT 0
-                    )
-                """);
-            } catch (SQLHeavy.Error e) {
-                throw new DatabaseError.CREATE_TABLE("Error creating table 'feeds'");
-            }
-        }
-*/
 
         /** Update a feed already in database and its items */
         public void update_feed (Feed feed) throws DatabaseError 
@@ -123,15 +84,17 @@ namespace Fido {
                         item_title,
                         item_content,
                         item_posted,
-                        item_updated
-                    ) VALUES (:feed_id, :guid, :title, :content, :posted, :updated)
+                        item_updated,
+                        item_author
+                    ) VALUES (:feed_id, :guid, :title, :content, :posted, :updated, :author)
                 """);
                 query[":feed_id"] = feed.id;
                 query[":guid"] = item.guid;
                 query[":title"] = item.title;
                 query[":content"] = item.description;
                 query[":posted"] = item.publish_time;
-                query[":updated"] = item.publish_time;
+                query[":updated"] = item.update_time == 0 ? item.publish_time : item.update_time;
+                query[":author"] = item.author;
                 query.execute();
             } catch (SQLHeavy.Error e) {
                 if (e is SQLHeavy.Error.CONSTRAINT) {
@@ -152,7 +115,8 @@ namespace Fido {
                         item_title   = :title,
                         item_content = :content,
                         item_posted  = :posted,
-                        item_updated = :updated
+                        item_updated = :updated,
+                        item_author  = :author
                     WHERE feed_id    = :feed_id 
                       AND item_guid =  :guid
                 """);
@@ -161,7 +125,8 @@ namespace Fido {
                 query[":title"] = item.title;
                 query[":content"] = item.description;
                 query[":posted"] = item.publish_time;
-                query[":updated"] = item.publish_time;
+                query[":updated"] = item.update_time == 0 ? item.publish_time : item.update_time;
+                query[":author"] = item.author;
                 query.execute();
             } catch (SQLHeavy.Error e) {
                 throw new DatabaseError.UPDATE(@"Error updating item with guid $(item.guid): $(e.message)");
@@ -220,7 +185,8 @@ namespace Fido {
                         item_title, 
                         item_content, 
                         item_posted,
-                        item_updated
+                        item_updated,
+                        item_author
                     FROM `items`, `feeds` USING (`feed_id`)
                     WHERE item_read_time < item_updated
                       AND item_updated < (strftime('%s'))
@@ -239,7 +205,8 @@ namespace Fido {
                 item.title =                 r.fetch_string (c++);
                 item.description =           r.fetch_string (c++);
                 item.publish_time =          r.fetch_int64  (c++);
-                // FIXME: updated time not supported in libgrss yet
+                item.update_time =           r.fetch_int64  (c++);
+                item.author =                r.fetch_string (c++);
                 return item;
             } catch (SQLHeavy.Error e) {
                 throw new DatabaseError.SELECT(@"Error while fetching item: $(e.message)");
@@ -307,28 +274,5 @@ namespace Fido {
                 throw new DatabaseError.INSERT(@"Error adding feed: $(e.message)");
             }
         }
-
-        // This should be rewritten to use Fido.Feed/Item.
-        public int64 add_item (Grss.FeedItem item) throws SQLHeavy.Error {
-            var feed_id = item.get_parent().get_data<int64> ("sqlid");
-            var id = this.db.execute_insert ("""
-                INSERT INTO `items` (
-                    item_guid,
-                    item_title,
-                    item_content,
-                    item_posted,
-                    item_updated,
-                    feed_id
-                ) VALUES (:guid, :title, :content, :posted, :updated, :feed_id)""",
-                                             ":guid", typeof(string), item.get_id(),
-                                             ":title", typeof(string), item.get_title(),
-                                             ":content", typeof(string), item.get_description(),
-                                             ":posted", typeof(int64), (int64)item.get_publish_time(),
-                                             ":updated", typeof(int64), (int64)item.get_publish_time(),
-                                             ":feed_id", typeof(int64), feed_id);
-            item.set_data<int64> ("sqlid", id);
-            return id;
-         }
-
     }
 }

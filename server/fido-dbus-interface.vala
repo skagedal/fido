@@ -27,6 +27,7 @@ namespace Fido {
         string author;
         string description;
         int64 publish_time;
+        int64 update_time;
         // Every time we send an item over DBus we also send it's entire feed info.
         // Not very efficient maybe but will do for now.
         FeedSerial feed;
@@ -39,6 +40,7 @@ namespace Fido {
             author = "";
             description = "";
             publish_time = 0;
+            update_time = 0;
             feed = FeedSerial ();
         }
     }

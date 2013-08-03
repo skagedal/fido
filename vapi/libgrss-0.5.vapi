@@ -89,6 +89,7 @@ namespace Grss {
 		public unowned string get_related ();
 		public unowned string get_source ();
 		public unowned string get_title ();
+		public long get_update_time ();
 		public void set_author (string author);
 		public void set_comments_url (string url);
 		public void set_copyright (string copyright);
@@ -100,6 +101,7 @@ namespace Grss {
 		public void set_related (string related);
 		public void set_source (string source);
 		public void set_title (string title);
+		public void set_update_time (long publish);
 	}
 	[CCode (cheader_filename = "libgrss.h", type_id = "grss_feed_parser_get_type ()")]
 	public class FeedParser : GLib.Object {

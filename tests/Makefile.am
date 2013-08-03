@@ -17,6 +17,7 @@ tests_SOURCES = 				\
 	test-main.vala				\
 	test-utils.vala				\
 	test-updater.vala			\
+	test-feed.vala				\
 	$(SERVER)/fido-utils.vala		\
 	$(SERVER)/fido-updater.vala		\
 	$(SERVER)/fido-database.vala		\

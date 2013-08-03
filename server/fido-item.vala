@@ -25,6 +25,7 @@ public class Item : Object {
         this.author = item.author;
         this.description = item.description;
         this.publish_time = item.publish_time;
+        this.update_time = item.update_time;
         
     }
     public ItemSerial to_serial() {
@@ -36,6 +37,7 @@ public class Item : Object {
         item.author = this.author ?? "";
         item.description = this.description ?? "";
         item.publish_time = this.publish_time;
+        item.update_time = this.update_time;
         item.feed = this._parent.to_serial ();
         return item;
     }
@@ -94,7 +96,15 @@ public class Item : Object {
         owned get { return new DateTime.from_unix_utc ((int64) grss.get_publish_time ()); }
         set { grss.set_publish_time ((long) value.to_unix ()); }
     }
-
+    public int64 update_time {
+        get { return (int64) grss.get_update_time (); }
+        set { grss.set_update_time ((long) value); }
+    }
+    public DateTime update_datetime {
+        owned get { return new DateTime.from_unix_utc ((int64) grss.get_update_time ()); }
+        set { grss.set_update_time ((long) value.to_unix ()); }
+    }
+        
     // grss to possibly wrap:
 /*
         public unowned GLib.List<string> get_categories ();

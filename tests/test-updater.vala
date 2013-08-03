@@ -63,6 +63,7 @@ class TestUpdater : Gee.TestCase {
       <link>http://localhost:8088/item/</link>
       <description>A simple item.</description>
       <pubDate>Fri, 26 Jul 2013 04:00:00 -0000</pubDate>
+      <author>simon@helgo.net</author>
       <guid>http://localhost:8088/item/</guid>
     </item>
   </channel>
@@ -73,10 +74,16 @@ class TestUpdater : Gee.TestCase {
             database.add_feed ("http://localhost:8088/simple_update");
             updater.force_update_all ();
             updater.sync ();
+            
+            // Get the first (and only) item and check that it's basically correct.
             var item = database.get_first_item ();
+            assert (item != null);
             assert (item.title == "Item");
             var time = new DateTime.utc (2013, 07, 26, 04, 00, 00).to_unix ();
             assert (item.publish_time == time);
+            assert (item.author == "simon@helgo.net");
+            
+            // Mark it read
             database.set_item_read_time (item.id);
             assert (database.get_first_item () == null);
             updater.force_update_all ();
@@ -87,4 +94,6 @@ class TestUpdater : Gee.TestCase {
             assert_not_reached ();
         }
     }
+    
+
 }
