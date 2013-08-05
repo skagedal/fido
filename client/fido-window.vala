@@ -122,7 +122,7 @@ namespace Fido {
   </head>
   <body>
     <div class="info">{{feed_title_link}} &#x2022; {{author_link}} &#x2022; {{update_time}}</div>
-    <h1>{{item_title}}</h1>
+    <h1>{{item_title_link}}</h1>
     {{item_description}}
   </body>
 </html>
@@ -149,6 +149,9 @@ namespace Fido {
                         break;
                     case "item_title":
                         result.append (current_item.title);
+                        break;
+                    case "item_title_link":
+                        result.append (current_item.title_link ());
                         break;
                     case "item_description":
                         result.append (current_item.description);

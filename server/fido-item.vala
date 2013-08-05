@@ -104,6 +104,14 @@ public class Item : Object {
         owned get { return new DateTime.from_unix_utc ((int64) grss.get_update_time ()); }
         set { grss.set_update_time ((long) value.to_unix ()); }
     }
+
+    public string title_link () {
+        string src = grss.get_source ();
+        if (src != null && src != "")
+            return """<a href="%s">%s</a>""".printf (src, grss.get_title ());
+        else
+            return grss.get_title (); // this is copied, right?
+    }
         
     // grss to possibly wrap:
 /*
